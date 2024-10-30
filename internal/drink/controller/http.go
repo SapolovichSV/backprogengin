@@ -56,8 +56,8 @@ func (h *httpHandler) AddRoutes(router *echo.Group) {
 	router.PUT("/drink", h.updateDrink)
 	router.DELETE("/drink/:name", h.deleteDrink)
 	router.GET("/drink/tag/:tag", h.drinksByTags)
-	router.GET("/drink", h.AllDrinks)
-	router.GET("/drink/name/:name", h.DrinkByName)
+	router.GET("/drink", h.allDrinks)
+	router.GET("/drink/name/:name", h.drinkByName)
 }
 
 func (h *httpHandler) createDrink(c echo.Context) error {
@@ -102,14 +102,14 @@ func (h *httpHandler) drinksByTags(c echo.Context) error {
 	}
 	return c.JSON(200, d)
 }
-func (h *httpHandler) AllDrinks(c echo.Context) error {
+func (h *httpHandler) allDrinks(c echo.Context) error {
 	d, err := h.st.AllDrinks()
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
 	return c.JSON(200, d)
 }
-func (h *httpHandler) DrinkByName(c echo.Context) error {
+func (h *httpHandler) drinkByName(c echo.Context) error {
 	name := c.Param("name")
 	d, err := h.st.DrinkByName(name)
 	if err == ErrNotFound {
