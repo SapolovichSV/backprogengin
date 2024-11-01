@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/labstack/echo"
 )
@@ -14,23 +16,26 @@ type Drink struct {
 var ErrNotFound = fmt.Errorf("not found")
 
 type storage interface {
-	CreateDrink(Drink) (Drink, error)
-	UpdateDrink(Drink) (Drink, error)
-	DeleteDrink(name string) error
-	DrinksByTags(tag []string) ([]Drink, error)
-	AllDrinks() ([]Drink, error)
-	DrinkByName(name string) (Drink, error)
+	CreateDrink(context.Context, Drink) (Drink, error)
+	UpdateDrink(context.Context, Drink) (Drink, error)
+	DeleteDrink(ctx context.Context, name string) error
+	DrinksByTags(ctx context.Context, tag []string) ([]Drink, error)
+	AllDrinks(ctx context.Context, id int) ([]Drink, error)
+	DrinkByName(ctx context.Context, name string) (Drink, error)
 }
+
 type httpHandler struct {
 	st   storage
 	echo *echo.Echo
+	ctx  context.Context
 }
 
-func NewHTTPHandler(st storage) *httpHandler {
+func NewHTTPHandler(st storage, ctx context.Context) *httpHandler {
 	echo := echo.New()
 	return &httpHandler{
 		st:   st,
 		echo: echo,
+		ctx:  ctx,
 	}
 }
 func (h *httpHandler) Start(port string) error {
@@ -65,7 +70,7 @@ func (h *httpHandler) createDrink(c echo.Context) error {
 	if err := c.Bind(&drink); err != nil {
 		return c.JSON(400, err.Error())
 	}
-	d, err := h.st.CreateDrink(drink)
+	d, err := h.st.CreateDrink(h.ctx, drink)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -76,7 +81,7 @@ func (h *httpHandler) updateDrink(c echo.Context) error {
 	if err := c.Bind(&drink); err != nil {
 		return c.JSON(400, err.Error())
 	}
-	d, err := h.st.UpdateDrink(drink)
+	d, err := h.st.UpdateDrink(h.ctx, drink)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -84,7 +89,7 @@ func (h *httpHandler) updateDrink(c echo.Context) error {
 }
 func (h *httpHandler) deleteDrink(c echo.Context) error {
 	name := c.Param("name")
-	err := h.st.DeleteDrink(name)
+	err := h.st.DeleteDrink(h.ctx, name)
 	if err == ErrNotFound {
 		return c.JSON(404, echo.ErrNotFound.Error())
 	} else if err != nil {
@@ -94,7 +99,7 @@ func (h *httpHandler) deleteDrink(c echo.Context) error {
 }
 func (h *httpHandler) drinksByTags(c echo.Context) error {
 	tag := c.Param("tag")
-	d, err := h.st.DrinksByTags([]string{tag})
+	d, err := h.st.DrinksByTags(h.ctx, []string{tag})
 	if err == ErrNotFound {
 		return c.JSON(404, echo.ErrNotFound.Error())
 	} else if err != nil {
@@ -103,7 +108,12 @@ func (h *httpHandler) drinksByTags(c echo.Context) error {
 	return c.JSON(200, d)
 }
 func (h *httpHandler) allDrinks(c echo.Context) error {
-	d, err := h.st.AllDrinks()
+	id, err := strconv.Atoi(
+		c.Param("id"))
+	if err != nil {
+		return c.JSON(500, err.Error())
+	}
+	d, err := h.st.AllDrinks(h.ctx, id)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
@@ -111,7 +121,7 @@ func (h *httpHandler) allDrinks(c echo.Context) error {
 }
 func (h *httpHandler) drinkByName(c echo.Context) error {
 	name := c.Param("name")
-	d, err := h.st.DrinkByName(name)
+	d, err := h.st.DrinkByName(h.ctx, name)
 	if err == ErrNotFound {
 		return c.JSON(404, echo.ErrNotFound.Error())
 	} else if err != nil {

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"time"
 
@@ -18,7 +19,8 @@ func main() {
 	}
 	defer db.Close()
 	model := model.NewSQLDrinkModel(db)
-	ctr := controller.NewHTTPHandler(model)
+	ctx := context.TODO()
+	ctr := controller.NewHTTPHandler(model, ctx)
 	router := ctr.BuildRouter("/api")
 	ctr.AddRoutes(router)
 	go func() {
