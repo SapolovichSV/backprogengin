@@ -5,27 +5,31 @@ import (
 	"database/sql"
 	"fmt"
 
-	sq "github.com/Masterminds/squirrel"
-	"github.com/SapolovichSV/backprogeng/internal/drink/controller"
+	"github.com/Masterminds/squirrel"
+	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
 )
 
 // DB:
 // drinks
 // id | name | tags
 var ErrNotFound = fmt.Errorf("not found")
+var sq = squirrel.StatementBuilder.PlaceholderFormat(squirrel.Dollar)
 
 // Drink is a struct that represents a drink
 type Drink struct {
 	name string
 	tags tags
 }
-type tags []tag
-
-type tag struct {
-	Name string
-}
 type SQLDrinkModel struct {
 	db *sql.DB
+}
+type DrinkModel interface {
+	CreateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error)
+	UpdateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error)
+	DeleteDrink(ctx context.Context, name string) error
+	DrinksByTags(ctx context.Context, tagsCont []string) ([]entities.Drink, error)
+	AllDrinks(ctx context.Context, id int) ([]entities.Drink, error)
+	DrinkByName(ctx context.Context, name string) (entities.Drink, error)
 }
 
 func NewSQLDrinkModel(db *sql.DB) *SQLDrinkModel {
@@ -33,7 +37,7 @@ func NewSQLDrinkModel(db *sql.DB) *SQLDrinkModel {
 		db: db,
 	}
 }
-func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont controller.Drink) (controller.Drink, error) {
+func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
 	d := fromControllerToModel(dCont)
 	sql, args, err := sq.Insert("drinks").Columns("name", "tags").Values(d.name, d.tags).ToSql()
 	if err != nil {
@@ -45,9 +49,9 @@ func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont controller.Drink)
 	}
 	return fromModelToController(d), nil
 }
-func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont controller.Drink) (controller.Drink, error) {
+func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
 	d := fromControllerToModel(dCont)
-	sql, args, err := sq.Update("drinks").Set("tags", d.tags).Where(sq.Eq{"name": d.name}).ToSql()
+	sql, args, err := sq.Update("drinks").Set("tags", d.tags).Where(squirrel.Eq{"name": d.name}).ToSql()
 	if err != nil {
 		return fromModelToController(Drink{}), err
 	}
@@ -58,7 +62,7 @@ func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont controller.Drink)
 	return fromModelToController(d), nil
 }
 func (m *SQLDrinkModel) DeleteDrink(ctx context.Context, name string) error {
-	sql, args, err := sq.Delete("drinks").Where(sq.Eq{"name": name}).ToSql()
+	sql, args, err := sq.Delete("drinks").Where(squirrel.Eq{"name": name}).ToSql()
 	if err != nil {
 		return err
 	}
@@ -68,9 +72,9 @@ func (m *SQLDrinkModel) DeleteDrink(ctx context.Context, name string) error {
 	}
 	return nil
 }
-func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]controller.Drink, error) {
+func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]entities.Drink, error) {
 	tags := fromControllerToModelTags(tagsCont)
-	sql, args, err := sq.Select("name", "tags").From("drinks").Where(sq.Eq{"tags": tags}).ToSql()
+	sql, args, err := sq.Select("name", "tags").From("drinks").Where(squirrel.Eq{"tags": tags}).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +82,7 @@ func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]
 	if err != nil {
 		return nil, err
 	}
-	var drinks []controller.Drink
+	var drinks []entities.Drink
 	for rows.Next() {
 		var d Drink
 		err = rows.Scan(&d.name, &d.tags)
@@ -92,8 +96,8 @@ func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]
 	}
 	return drinks, nil
 }
-func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]controller.Drink, error) {
-	sql, args, err := sq.Select("name", "tags").From("drinks").ToSql()
+func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]entities.Drink, error) {
+	sql, args, err := sq.Select("name", "tags").From("drinks").Where(squirrel.Gt{"id": id}).ToSql()
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]controller.Dri
 	if err != nil {
 		return nil, err
 	}
-	var drinks []controller.Drink
+	var drinks []entities.Drink
 	for rows.Next() {
 		var d Drink
 		err = rows.Scan(&d.name, &d.tags)
@@ -113,19 +117,18 @@ func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]controller.Dri
 	if len(drinks) == 0 {
 		return nil, ErrNotFound
 	}
-
 	return drinks, nil
 }
-func (m *SQLDrinkModel) DrinkByName(ctx context.Context, name string) (controller.Drink, error) {
-	sql, args, err := sq.Select("name", "tags").From("drinks").Where(sq.Eq{"name": name}).ToSql()
+func (m *SQLDrinkModel) DrinkByName(ctx context.Context, name string) (entities.Drink, error) {
+	sql, args, err := sq.Select("name", "tags").From("drinks").Where(squirrel.Eq{"name": name}).ToSql()
 	if err != nil {
-		return controller.Drink{}, err
+		return entities.Drink{}, err
 	}
 	row := m.db.QueryRowContext(ctx, sql, args...)
 	var d Drink
 	err = row.Scan(&d.name, &d.tags)
 	if err != nil {
-		return controller.Drink{}, err
+		return entities.Drink{}, err
 	}
 	return fromModelToController(d), nil
 }

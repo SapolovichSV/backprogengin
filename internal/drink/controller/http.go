@@ -3,42 +3,49 @@ package controller
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"strconv"
 
+	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
 	"github.com/labstack/echo"
 )
 
-type Drink struct {
-	Name string   `json:"name"`
-	Tags []string `json:"tags"`
+type logger interface {
+	Info(msg string, args ...any)
+	Debug(msg string, args ...any)
+	Error(msg string, args ...any)
+}
+
+type storage interface {
+	CreateDrink(context.Context, entities.Drink) (entities.Drink, error)
+	UpdateDrink(context.Context, entities.Drink) (entities.Drink, error)
+	DeleteDrink(ctx context.Context, name string) error
+	DrinksByTags(ctx context.Context, tag []string) ([]entities.Drink, error)
+	AllDrinks(ctx context.Context, id int) ([]entities.Drink, error)
+	DrinkByName(ctx context.Context, name string) (entities.Drink, error)
 }
 
 var ErrNotFound = fmt.Errorf("not found")
-
-type storage interface {
-	CreateDrink(context.Context, Drink) (Drink, error)
-	UpdateDrink(context.Context, Drink) (Drink, error)
-	DeleteDrink(ctx context.Context, name string) error
-	DrinksByTags(ctx context.Context, tag []string) ([]Drink, error)
-	AllDrinks(ctx context.Context, id int) ([]Drink, error)
-	DrinkByName(ctx context.Context, name string) (Drink, error)
-}
 
 type httpHandler struct {
 	st   storage
 	echo *echo.Echo
 	ctx  context.Context
+	log  logger
 }
 
-func NewHTTPHandler(st storage, ctx context.Context) *httpHandler {
+func NewHTTPHandler(st storage, ctx context.Context, log logger) *httpHandler {
 	echo := echo.New()
+	log.Debug("New http handler")
 	return &httpHandler{
 		st:   st,
 		echo: echo,
 		ctx:  ctx,
+		log:  log,
 	}
 }
 func (h *httpHandler) Start(port string) error {
+	h.log.Debug("Starting server at port %d", port)
 	return h.echo.Start(fmt.Sprintf(":%s", port))
 }
 func (h *httpHandler) Stop() error {
@@ -50,6 +57,7 @@ func (h *httpHandler) Stop() error {
 // h.BuildRouter("/api")
 // This will create a new router group in the echo instance with the prefix /api
 func (h *httpHandler) BuildRouter(group string) *echo.Group {
+	h.log.Debug("Building group : %s", group)
 	router := h.echo.Group(group)
 	return router
 }
@@ -57,16 +65,17 @@ func (h *httpHandler) BuildRouter(group string) *echo.Group {
 // AddRoutes is a method that adds the routes to the router
 // Example usage:
 func (h *httpHandler) AddRoutes(router *echo.Group) {
+	h.log.Debug("making routes")
 	router.POST("/drink", h.createDrink)
 	router.PUT("/drink", h.updateDrink)
 	router.DELETE("/drink/:name", h.deleteDrink)
 	router.GET("/drink/tag/:tag", h.drinksByTags)
-	router.GET("/drink", h.allDrinks)
+	router.GET("/drink/id/:id", h.allDrinks)
 	router.GET("/drink/name/:name", h.drinkByName)
 }
 
 func (h *httpHandler) createDrink(c echo.Context) error {
-	var drink Drink
+	var drink entities.Drink
 	if err := c.Bind(&drink); err != nil {
 		return c.JSON(400, err.Error())
 	}
@@ -74,10 +83,10 @@ func (h *httpHandler) createDrink(c echo.Context) error {
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}
-	return c.JSON(200, d)
+	return c.JSON(http.StatusCreated, d)
 }
 func (h *httpHandler) updateDrink(c echo.Context) error {
-	var drink Drink
+	var drink entities.Drink
 	if err := c.Bind(&drink); err != nil {
 		return c.JSON(400, err.Error())
 	}
@@ -108,8 +117,8 @@ func (h *httpHandler) drinksByTags(c echo.Context) error {
 	return c.JSON(200, d)
 }
 func (h *httpHandler) allDrinks(c echo.Context) error {
-	id, err := strconv.Atoi(
-		c.Param("id"))
+	param := c.Param("id")
+	id, err := strconv.Atoi(param)
 	if err != nil {
 		return c.JSON(500, err.Error())
 	}

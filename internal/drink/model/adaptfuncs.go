@@ -1,15 +1,17 @@
 package model
 
-import "github.com/SapolovichSV/backprogeng/internal/drink/controller"
+import (
+	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
+)
 
-func fromControllerToModel(c controller.Drink) Drink {
+func fromControllerToModel(c entities.Drink) Drink {
 	return Drink{
 		name: c.Name,
 		tags: fromControllerToModelTags(c.Tags),
 	}
 }
-func fromModelToController(m Drink) controller.Drink {
-	return controller.Drink{
+func fromModelToController(m Drink) entities.Drink {
+	return entities.Drink{
 		Name: m.name,
 		Tags: fromModelToControllerTags(m.tags),
 	}
