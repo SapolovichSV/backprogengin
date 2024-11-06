@@ -1,6 +1,8 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
 )
 
@@ -29,4 +31,10 @@ func fromControllerToModelTags(c []string) tags {
 		t = append(t, tag{Name: v})
 	}
 	return t
+}
+func wrapifErrorInModel(msg string, err error) error {
+	if err != nil {
+		return fmt.Errorf("%s : %s", msg, err.Error())
+	}
+	return nil
 }
