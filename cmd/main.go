@@ -3,8 +3,6 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log/slog"
-	"os"
 
 	"github.com/SapolovichSV/backprogeng/internal/config"
 	"github.com/SapolovichSV/backprogeng/internal/drink/controller"
@@ -16,7 +14,11 @@ import (
 )
 
 func main() {
+	Run()
+}
+func Run() {
 	config := config.ListConfig()
+	//sudo docker run --rm --name db -p 5432:5432 -e POSTGRES_PASSWORD=pass123 -d postgres
 	db, err := sql.Open("pgx", config.DbAddr)
 	if err != nil {
 		panic(err)
@@ -34,12 +36,9 @@ func main() {
 		panic(err)
 	}
 	defer db.Close()
-
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{}))
-	logger.Info("logging started")
 	model := model.NewSQLDrinkModel(db)
-	ctx := context.TODO()
-	ctr := controller.NewHTTPHandler(model, ctx, logger)
+	ctx := context.Background()
+	ctr := controller.NewHTTPHandler(model, ctx)
 	router := ctr.BuildRouter("/api")
 	ctr.AddRoutes(router)
 	err = ctr.Start(config.Port)

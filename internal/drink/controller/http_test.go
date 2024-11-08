@@ -57,7 +57,7 @@ func Test_httpHandler_createDrink(t *testing.T) {
 	mockStorage.EXPECT().CreateDrink(gomock.Any(), ts[0].reqBody).Return(ts[0].respBody, nil)
 	mockStorage.EXPECT().CreateDrink(gomock.Any(), ts[1].reqBody).Return(ts[1].respBody, nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 
@@ -123,7 +123,7 @@ func Test_httpHandler_updateDrink(t *testing.T) {
 	mockStorage.EXPECT().UpdateDrink(gomock.Any(), ts[0].reqBody).Return(ts[0].respBody, nil)
 	mockStorage.EXPECT().UpdateDrink(gomock.Any(), ts[1].reqBody).Return(ts[1].respBody, nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 
@@ -192,7 +192,7 @@ func Test_httpHandler_deleteDrink(t *testing.T) {
 	mockStorage.EXPECT().DeleteDrink(gomock.Any(), "test01").Return(nil)
 	mockStorage.EXPECT().DeleteDrink(gomock.Any(), "test02").Return(nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 
@@ -265,7 +265,7 @@ func Test_httpHandler_drinksByTags(t *testing.T) {
 	mockStorage.EXPECT().DrinksByTags(gomock.Any(), []string{"spicy"}).Return(ts[0].respBody, nil)
 	mockStorage.EXPECT().DrinksByTags(gomock.Any(), []string{"non-alcohol"}).Return(ts[1].respBody, nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 
@@ -342,7 +342,7 @@ func Test_httpHandler_allDrinks(t *testing.T) {
 	mockStorage.EXPECT().AllDrinks(gomock.Any(), 1).Return(ts[0].respBody, nil)
 	mockStorage.EXPECT().AllDrinks(gomock.Any(), 2).Return(ts[1].respBody, nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 
@@ -422,7 +422,7 @@ func Test_httpHandler_drinkByName(t *testing.T) {
 	mockStorage.EXPECT().DrinkByName(gomock.Any(), "test01").Return(ts[0].respBody, nil)
 	mockStorage.EXPECT().DrinkByName(gomock.Any(), "test02").Return(ts[1].respBody, nil)
 
-	h := &httpHandler{mockStorage, nil, nil, nil}
+	h := &httpHandler{mockStorage, nil, nil}
 
 	for _, v := range ts {
 

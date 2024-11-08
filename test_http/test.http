@@ -1,0 +1,20 @@
+@hostname = localhost
+@port = 8080
+@host = {{hostname}}:{{port}}
+POST http://{{host}}/api/drink HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "testdrink1",
+    "tags": ["tag1","tag2"]
+}
+###
+PUT http://{{host}}/api/drink HTTP/1.1
+Content-Type: application/json
+
+{
+    "name": "testdrink1",
+    "tags": ["spisy,tag2"]
+}
+###
+GET http://{{host}}/api/drink/id/0
