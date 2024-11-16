@@ -5,9 +5,11 @@ import (
 	"database/sql"
 
 	"github.com/SapolovichSV/backprogeng/internal/config"
-	"github.com/SapolovichSV/backprogeng/internal/drink/controller"
-	"github.com/SapolovichSV/backprogeng/internal/drink/model"
+	drinkController "github.com/SapolovichSV/backprogeng/internal/drink/controller"
+	drinkModel "github.com/SapolovichSV/backprogeng/internal/drink/model"
 	httpinfra "github.com/SapolovichSV/backprogeng/internal/http_infra"
+	userController "github.com/SapolovichSV/backprogeng/internal/user/controller"
+	userModel "github.com/SapolovichSV/backprogeng/internal/user/model"
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
@@ -39,14 +41,20 @@ func Run() {
 		panic(err)
 	}
 	defer db.Close()
+	ctx := context.Background()
 	//Создаём модель дринков
-	model := model.NewSQLDrinkModel(db)
+	modelDrink := drinkModel.NewSQLDrinkModel(db)
+	modelUser := userModel.New(db)
+
 	//Создаём контроллер дринков
-	drinkHandler := controller.NewHTTPHandler(model, context.Background())
+	drinkHandler := drinkController.New(modelDrink, ctx)
+	userHandler := userController.New(modelUser, ctx)
 	//Создаём сервер и в его роутер записываем роуты дринктов и еще юзеров(ещё их не наиписал)
 	server := httpinfra.NewServer(config.Port)
 	router := server.GetRouter()
+
 	drinkHandler.AddRoutes("api", router)
+	userHandler.AddRoutes("api", router)
 	//userHandler.AddRoutes("api", router)
 	//GameHandler.AddRoutes("api",router))
 	//Запускаем сервер

@@ -27,7 +27,7 @@ type httpHandler struct {
 	ctx  context.Context
 }
 
-func NewHTTPHandler(st storage, ctx context.Context) *httpHandler {
+func New(st storage, ctx context.Context) *httpHandler {
 	echo := echo.New()
 	return &httpHandler{
 		st:   st,

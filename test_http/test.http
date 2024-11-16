@@ -18,3 +18,26 @@ Content-Type: application/json
 }
 ###
 GET http://{{host}}/api/drink/id/0
+### 
+POST http://{{host}}/api/user HTTP/1.1
+Content-Type: application/json
+
+{
+    "username":"testuser1",
+    "password":"testpassword1",
+    "drinknames":["testdrink1","testdrink2"]
+}
+###
+GET http://{{host}}/api/user/2 HTTP/1.1
+Content-Type: application/json
+###
+GET http://{{host}}/api/user/1 HTTP/1.1
+Content-Type: application/json
+###
+PATCH  http://{{host}}/api/user/fav HTTP/1.1
+Content-Type: application/json
+
+{
+    "id": 1, 
+    "drinkname": "testdrink1"
+}
