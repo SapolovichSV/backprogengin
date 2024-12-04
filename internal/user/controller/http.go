@@ -28,6 +28,7 @@ func New(st storage, ctx context.Context) *httpHandler {
 		ctx:  ctx,
 	}
 }
+
 func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	router.Add("POST", "/"+pathRoutesName+"/user", h.CreateUser)
 	router.Add("GET", "/"+pathRoutesName+"/user/:id", h.UserByID)
@@ -53,11 +54,8 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, user)
 }
 
-// path
-// path/user/:id
 func (h *httpHandler) UserByID(c echo.Context) error {
-	paramId := c.Param("id")
-	id, err := strconv.Atoi(paramId)
+	id, err := getParamId("id", c)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
@@ -68,12 +66,15 @@ func (h *httpHandler) UserByID(c echo.Context) error {
 	return c.JSON(http.StatusOK, user)
 }
 
-// Короче в джсоне
-//
-//	{
-//		"drinkname": "string",
-//		"id": "int"
-//	}
+func getParamId(paramName string, c echo.Context) (int, error) {
+	param := c.Param(paramName)
+	id, err := strconv.Atoi(param)
+	if err != nil {
+		return 0, err
+	}
+	return id, err
+}
+
 func (h *httpHandler) AddFav(c echo.Context) error {
 	type inp struct {
 		DrinkName string `json:"drinkname"`

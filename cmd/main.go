@@ -13,7 +13,7 @@ import (
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 func main() {
@@ -23,28 +23,16 @@ func Run() {
 	//Чекаем переменные окружения чтобы подцепить бд и порт сервера
 	config := config.ListConfig()
 	//sudo docker run --rm --name db -p 5432:5432 -e POSTGRES_PASSWORD=pass123 -d postgres
-	db, err := sql.Open("pgx", config.DbAddr)
-	if err != nil {
-		panic(err)
-	}
-	driver, err := postgres.WithInstance(db, &postgres.Config{})
-	if err != nil {
-		panic(err)
-	}
-	//Мигрируем на новую схему бдшки(надо прочекать будет теряются ли данные при этом)
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
-	if err != nil {
-		panic(err.Error())
-	}
-	err = m.Up()
-	if err != nil && err != migrate.ErrNoChange {
-		panic(err)
-	}
-	defer db.Close()
+	migrateAndUp(&config)
+
 	ctx := context.Background()
+	conn, err := pgxpool.New(ctx, config.DbAddr)
+	if err := conn.Ping(ctx); err != nil {
+		panic("Connection fail" + err.Error())
+	}
 	//Создаём модель дринков
-	modelDrink := drinkModel.NewSQLDrinkModel(db)
-	modelUser := userModel.New(db)
+	modelDrink := drinkModel.New(conn)
+	modelUser := userModel.New(conn)
 
 	//Создаём контроллер дринков
 	drinkHandler := drinkController.New(modelDrink, ctx)
@@ -62,4 +50,23 @@ func Run() {
 	if err != nil {
 		panic(err)
 	}
+}
+func migrateAndUp(config *config.Config) {
+	db, err := sql.Open("pgx", config.DbAddr)
+	if err != nil {
+		panic(err)
+	}
+	driver, err := postgres.WithInstance(db, &postgres.Config{})
+	if err != nil {
+		panic(err)
+	}
+	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	if err != nil {
+		panic(err.Error())
+	}
+	err = m.Up()
+	if err != nil && err != migrate.ErrNoChange {
+		panic(err)
+	}
+	defer db.Close()
 }

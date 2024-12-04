@@ -2,33 +2,52 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"reflect"
 	"testing"
 
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
-	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+const QUERY_CREATE_TABLES = `CREATE TABLE drinks (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    tags TEXT
+);
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    password VARCHAR(255)
+);
+CREATE TABLE favs (
+    user_id INT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)  ON DELETE CASCADE,
+    drink_id INT NOT NULL,
+   FOREIGN KEY (drink_id) REFERENCES drinks(id) ON DELETE CASCADE
+);`
+const QUERY_DROP_TABLES = `DROP TABLE drinks CASCADE;
+DROP TABLE users CASCADE;
+DROP TABLE favs CASCADE;`
 
 // Сначала нужно поднять тестовую бд
 // потом запускать
-// sudo docker run --name --rm test-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=username -e POSTGRES_DB=dbname -p 5432:5432 -d postgres
+// sudo docker run --rm --name test-postgres -e POSTGRES_PASSWORD=password -e POSTGRES_USER=username -e POSTGRES_DB=dbname -p 5432:5432 -d postgres
 func TestSQLDrinkModel_CreateDrink(t *testing.T) {
-	db, err := sql.Open("pgx", "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
 	if err != nil {
 		t.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec("DROP TABLE IF EXISTS drinks;")
 	if err != nil {
 		t.Fatalf("Failed to drop table: %v", err)
 	}
-	_, err = db.Exec(`CREATE TABLE drinks (
-	    id SERIAL PRIMARY KEY,
-	    name VARCHAR(255) NOT NULL,
-	    tags TEXT
-	);`)
-	defer db.Exec("DROP TABLE IF EXISTS drinks;")
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer func() {
+		_, err := db.Exec(context.TODO(), QUERY_DROP_TABLES)
+		if err != nil {
+			panic(err)
+		}
+	}()
 	if err != nil {
 		t.Fatalf("Failed to create table: %v", err)
 	}
@@ -47,7 +66,7 @@ func TestSQLDrinkModel_CreateDrink(t *testing.T) {
 
 	var createdDrink Drink
 
-	err = db.QueryRowContext(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&createdDrink.name, &createdDrink.tags)
+	err = db.QueryRow(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&createdDrink.name, &createdDrink.tags)
 	if err != nil {
 		t.Fatalf("Failed to retrieve created drink: %v", err)
 	}
@@ -58,7 +77,7 @@ func TestSQLDrinkModel_CreateDrink(t *testing.T) {
 }
 
 func TestSQLDrinkModel_UpdateDrink(t *testing.T) {
-	db, err := sql.Open("pgx", "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
 	if err != nil {
 		t.Fatalf("Failed to connect to the database: %v", err)
 	}
@@ -66,12 +85,8 @@ func TestSQLDrinkModel_UpdateDrink(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to drop table: %v", err)
 	}
-	_, err = db.Exec(`CREATE TABLE drinks (
-	    id SERIAL PRIMARY KEY,
-	    name VARCHAR(255) NOT NULL,
-	    tags TEXT
-	);`)
-	defer db.Exec("DROP TABLE IF EXISTS drinks;")
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer db.Exec(context.TODO(), QUERY_DROP_TABLES)
 	if err != nil {
 		t.Fatalf("Failed to create table: %v", err)
 	}
@@ -97,7 +112,7 @@ func TestSQLDrinkModel_UpdateDrink(t *testing.T) {
 
 	var updatedDrink Drink
 
-	err = db.QueryRowContext(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&updatedDrink.name, &updatedDrink.tags)
+	err = db.QueryRow(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&updatedDrink.name, &updatedDrink.tags)
 	if err != nil {
 		t.Fatalf("Failed to retrieve updated drink: %v", err)
 	}
@@ -108,7 +123,7 @@ func TestSQLDrinkModel_UpdateDrink(t *testing.T) {
 }
 
 func TestSQLDrinkModel_DeleteDrink(t *testing.T) {
-	db, err := sql.Open("pgx", "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
 	if err != nil {
 		t.Fatalf("Failed to connect to the database: %v", err)
 	}
@@ -116,12 +131,8 @@ func TestSQLDrinkModel_DeleteDrink(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to drop table: %v", err)
 	}
-	_, err = db.Exec(`CREATE TABLE drinks (
-	    id SERIAL PRIMARY KEY,
-	    name VARCHAR(255) NOT NULL,
-	    tags TEXT
-	);`)
-	defer db.Exec("DROP TABLE IF EXISTS drinks;")
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer db.Exec(context.TODO(), QUERY_DROP_TABLES)
 	if err != nil {
 		t.Fatalf("Failed to create table: %v", err)
 	}
@@ -145,7 +156,7 @@ func TestSQLDrinkModel_DeleteDrink(t *testing.T) {
 
 	var deletedDrink Drink
 
-	err = db.QueryRowContext(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&deletedDrink.name, &deletedDrink.tags)
+	err = db.QueryRow(ctx, "SELECT name, tags FROM drinks WHERE name = $1", drink.Name).Scan(&deletedDrink.name, &deletedDrink.tags)
 	if err == nil {
 		t.Fatalf("Deleted drink was found: %v", err)
 	}
@@ -156,17 +167,13 @@ func TestSQLDrinkModel_DeleteDrink(t *testing.T) {
 }
 
 func TestSQLDrinkModel_DrinksByTags(t *testing.T) {
-	db, err := sql.Open("pgx", "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
 	if err != nil {
 		t.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec(`CREATE TABLE drinks (
-	    id SERIAL PRIMARY KEY,
-	    name VARCHAR(255) NOT NULL,
-	    tags TEXT
-	);`)
-	defer db.Exec("DROP TABLE IF EXISTS drinks;")
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer db.Exec(context.TODO(), QUERY_DROP_TABLES)
 	if err != nil {
 		t.Fatalf("Failed to create table: %v", err)
 	}
@@ -204,17 +211,13 @@ func TestSQLDrinkModel_DrinksByTags(t *testing.T) {
 }
 
 func TestSQLDrinkModel_AllDrinks(t *testing.T) {
-	db, err := sql.Open("pgx", "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
 	if err != nil {
 		t.Fatalf("Failed to connect to the database: %v", err)
 	}
 	defer db.Close()
-	_, err = db.Exec(`CREATE TABLE drinks (
-	    id SERIAL PRIMARY KEY,
-	    name VARCHAR(255) NOT NULL,
-	    tags TEXT
-	);`)
-	defer db.Exec("DROP TABLE IF EXISTS drinks;")
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer db.Exec(context.TODO(), QUERY_DROP_TABLES)
 	if err != nil {
 		t.Fatalf("Failed to create table: %v", err)
 	}
