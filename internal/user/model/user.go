@@ -2,27 +2,18 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 
-	"github.com/SapolovichSV/backprogeng/internal/errlib"
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// DB:
-// ID username password favourites
 var ErrNotFound = errors.New("not found")
 
-//Переделить таблицу в нормализованный вид
-// ID username password
-//another table:
-//UserID Fav
-//Example
-//0 tasty
-//0 strong
-//1 tasty
+const QUERY_IDS_OF_FAV_DRINKS_USERS = `(SELECT favs.drink_id
+	FROM favs
+	WHERE user_id = $1)`
 
 type SQLUserModel struct {
 	db *pgxpool.Pool
@@ -95,23 +86,44 @@ WHERE users.id = $2;
 	userRes.ID = id
 	return userRes, row.Err()
 }
-func (m *SQLUserModel) AddFav(ctx context.Context, drinkName string, user entities.User) (res entities.User, err error) {
-	query := "SELECT id,username,password,favourites FROM users WHERE id = $1"
-
-	err = m.db.QueryRow(ctx, query, user.ID).Scan(&user.ID, &user.Username, &user.Password, &user.FavouritesDrinkName)
-	if err == sql.ErrNoRows {
+func (m *SQLUserModel) AddFav(ctx context.Context, drinkName string, userID int) (res entities.User, err error) {
+	queryUser := `SELECT users.username,users.password,drinks.name
+        FROM users INNER JOIN drinks ON drinks.id IN (SELECT favs.drink_id
+	FROM favs
+	WHERE user_id = $1)
+WHERE users.id = $2;
+`
+	queryGetDrinkID := `SELECT drinks.id
+	FROM drinks
+	WHERE drinks.name = $1;
+	`
+	var drinkID int
+	if err = m.db.QueryRow(ctx, queryGetDrinkID, drinkName).Scan(&drinkID); err != nil {
 		return entities.User{}, ErrNotFound
-	} else if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "error getting user")
 	}
+	//Получаю инфу о юзере(нейм,пасс,фаворитес)
+	row, _ := m.db.Query(ctx, queryUser, userID, userID)
 
-	user.FavouritesDrinkName = append(user.FavouritesDrinkName, drinkName)
-	query = "UPDATE users SET favourites = $1 WHERE id = $2"
-	_, err = m.db.Exec(ctx, query, user.FavouritesDrinkName, user.ID)
-	if err == sql.ErrNoRows {
-		return entities.User{}, ErrNotFound
-	} else if err != nil {
-		err = errlib.WrapErr(err, "error adding favourite")
+	for i := 0; row.Next(); i++ {
+		var drinkName string
+		if i == 0 {
+			row.Scan(&res.Username, &res.Password, &drinkName)
+		} else {
+			row.Scan(nil, nil, &drinkName)
+		}
+		res.FavouritesDrinkName = append(res.FavouritesDrinkName, drinkName)
 	}
-	return user, err
+	if res.Username == "" || row.Err() == pgx.ErrNoRows {
+		return res, ErrNotFound
+	} else if row.Err() != nil {
+		return entities.User{}, row.Err()
+	}
+	queryAddToUserNewFavDrink := `INSERT INTO favs (user_id,drink_id)
+	VALUES ($1,$2);`
+	if _, err := m.db.Exec(ctx, queryAddToUserNewFavDrink, userID, drinkID); err != nil {
+		return entities.User{}, err
+	}
+	res.FavouritesDrinkName = append(res.FavouritesDrinkName, drinkName)
+	res.ID = userID
+	return res, nil
 }

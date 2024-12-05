@@ -12,7 +12,7 @@ import (
 type storage interface {
 	CreateUser(context.Context, entities.User) (entities.User, error)
 	UserByID(context.Context, int) (entities.User, error)
-	AddFav(ctx context.Context, drinkName string, user entities.User) (entities.User, error)
+	AddFav(ctx context.Context, drinkName string, userID int) (entities.User, error)
 }
 type httpHandler struct {
 	st   storage
@@ -84,7 +84,7 @@ func (h *httpHandler) AddFav(c echo.Context) error {
 	if err := c.Bind(&input); err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
-	user, err := h.st.AddFav(h.ctx, input.DrinkName, entities.User{ID: input.ID})
+	user, err := h.st.AddFav(h.ctx, input.DrinkName, input.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}
