@@ -206,13 +206,17 @@ func TestSQLUserModel_AddFav(t *testing.T) {
 	defer db.Close()
 	defer db.Exec(ctx, QUERY_DROP_TABLES)
 	tests := []struct {
-		name      string
-		beforeAdd entities.User
-		want      entities.User
-		wantErr   bool
+		name                       string
+		beforeAdd                  entities.User
+		want                       entities.User
+		wantErr                    bool
+		mustCreateUserBeforeTest   bool
+		mustCreateDrinksBeforeTest bool
+		drinks                     []drEnt.Drink
+		addingDrinkName            string
 	}{
 		{
-			name: "TEST01",
+			name: "SimpleTest",
 			beforeAdd: entities.User{
 				Username:            "Stas228",
 				Password:            "amahasla",
@@ -223,18 +227,49 @@ func TestSQLUserModel_AddFav(t *testing.T) {
 				Password:            "amahasla",
 				FavouritesDrinkName: []string{"cola", "pussy", "pepsi"},
 			},
-			wantErr: false,
+			wantErr:                    false,
+			mustCreateUserBeforeTest:   true,
+			mustCreateDrinksBeforeTest: true,
+			drinks: []drEnt.Drink{
+				{Name: "cola", Tags: []string{"spicy", "spice"}},
+				{Name: "pussy", Tags: []string{"sweet", "spyce"}},
+				{Name: "pepsi", Tags: []string{"sweet", "spyce"}},
+			},
+			addingDrinkName: "pepsi",
 		},
 	}
 	drinkModel := model.New(db)
-	drinkModel.CreateDrink(ctx, drEnt.Drink{Name: "cola", Tags: []string{"nice", "sweet"}})
-	drinkModel.CreateDrink(ctx, drEnt.Drink{Name: "pussy", Tags: []string{"nice", "sweet", "cool"}})
-	drinkModel.CreateDrink(ctx, drEnt.Drink{Name: "pepsi", Tags: []string{"nice", "sweet"}})
 	m := New(db)
-	have, err := m.CreateUser(ctx, tests[0].beforeAdd)
-	assert.NoError(t, err)
-	tests[0].want.ID = have.ID
-	have, err = m.AddFav(ctx, "pepsi", have.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, tests[0].want, have)
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.mustCreateUserBeforeTest {
+				if tt.mustCreateDrinksBeforeTest {
+					for _, drink := range tt.drinks {
+						drinkModel.CreateDrink(ctx, drink)
+					}
+				}
+				createdUser, err := m.CreateUser(ctx, tt.beforeAdd)
+				assert.NoError(t, err)
+
+				have, err := m.AddFav(ctx, tt.addingDrinkName, createdUser.ID)
+				tt.want.ID = createdUser.ID
+				if tt.wantErr {
+					assert.Error(t, err)
+				} else {
+					assert.NoError(t, err)
+					assert.Equal(t, tt.want, have)
+				}
+			} else {
+				if tt.mustCreateDrinksBeforeTest {
+					for _, drink := range tt.drinks {
+						drinkModel.CreateDrink(ctx, drink)
+					}
+				}
+				_, err := m.AddFav(ctx, tt.addingDrinkName, tt.beforeAdd.ID)
+				if tt.wantErr {
+					assert.Error(t, err)
+				}
+			}
+		})
+	}
 }
