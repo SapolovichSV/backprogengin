@@ -10,12 +10,6 @@ import (
 	"github.com/labstack/echo"
 )
 
-type logger interface {
-	Info(msg string, args ...any)
-	Debug(msg string, args ...any)
-	Error(msg string, args ...any)
-}
-
 type storage interface {
 	CreateDrink(context.Context, entities.Drink) (entities.Drink, error)
 	UpdateDrink(context.Context, entities.Drink) (entities.Drink, error)
@@ -31,47 +25,42 @@ type httpHandler struct {
 	st   storage
 	echo *echo.Echo
 	ctx  context.Context
-	log  logger
 }
 
-func NewHTTPHandler(st storage, ctx context.Context, log logger) *httpHandler {
+func New(st storage, ctx context.Context) *httpHandler {
 	echo := echo.New()
-	log.Debug("New http handler")
 	return &httpHandler{
 		st:   st,
 		echo: echo,
 		ctx:  ctx,
-		log:  log,
 	}
-}
-func (h *httpHandler) Start(port string) error {
-	h.log.Debug("Starting server at port %d", port)
-	return h.echo.Start(fmt.Sprintf(":%s", port))
-}
-func (h *httpHandler) Stop() error {
-	return h.echo.Close()
 }
 
 // BuildRouter is a method that creates a new router group in the echo instance
 // Example usage:
 // h.BuildRouter("/api")
 // This will create a new router group in the echo instance with the prefix /api
-func (h *httpHandler) BuildRouter(group string) *echo.Group {
-	h.log.Debug("Building group : %s", group)
-	router := h.echo.Group(group)
-	return router
-}
 
 // AddRoutes is a method that adds the routes to the router
 // Example usage:
-func (h *httpHandler) AddRoutes(router *echo.Group) {
-	h.log.Debug("making routes")
-	router.POST("/drink", h.createDrink)
-	router.PUT("/drink", h.updateDrink)
-	router.DELETE("/drink/:name", h.deleteDrink)
-	router.GET("/drink/tag/:tag", h.drinksByTags)
-	router.GET("/drink/id/:id", h.allDrinks)
-	router.GET("/drink/name/:name", h.drinkByName)
+// h.AddRoutes(router)
+// This will add the routes to the router
+// The routes are:
+// POST /{{pathRoutesName}}/drink
+// and e.t.c
+func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
+	router.Add("POST", "/"+pathRoutesName+"/drink", h.createDrink)
+	//router.POST("/drink", h.createDrink)
+	router.Add("PUT", "/"+pathRoutesName+"/drink", h.updateDrink)
+	//router.PUT("/drink", h.updateDrink)
+	router.Add("DELETE", "/"+pathRoutesName+"/drink/:name", h.deleteDrink)
+	//router.DELETE("/drink/:name", h.deleteDrink)
+	router.Add("GET", "/"+pathRoutesName+"/drink/tag/:tag", h.drinksByTags)
+	//router.GET("/drink/tag/:tag", h.drinksByTags)
+	router.Add("GET", "/"+pathRoutesName+"/drink/id/:id", h.allDrinks)
+	//router.GET("/drink/id/:id", h.allDrinks)
+	router.Add("GET", "/"+pathRoutesName+"/drink/name/:name", h.drinkByName)
+	//router.GET("/drink/name/:name", h.drinkByName)
 }
 
 func (h *httpHandler) createDrink(c echo.Context) error {

@@ -2,11 +2,11 @@ package model
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/Masterminds/squirrel"
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 // DB:
@@ -21,7 +21,7 @@ type Drink struct {
 	tags tags
 }
 type SQLDrinkModel struct {
-	db *sql.DB
+	db *pgxpool.Pool
 }
 type DrinkModel interface {
 	CreateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error)
@@ -32,7 +32,7 @@ type DrinkModel interface {
 	DrinkByName(ctx context.Context, name string) (entities.Drink, error)
 }
 
-func NewSQLDrinkModel(db *sql.DB) *SQLDrinkModel {
+func New(db *pgxpool.Pool) *SQLDrinkModel {
 	return &SQLDrinkModel{
 		db: db,
 	}
@@ -43,7 +43,7 @@ func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont entities.Drink) (
 	if err != nil {
 		return fromModelToController(Drink{}), wrapifErrorInModel("create drink", err)
 	}
-	_, err = m.db.ExecContext(ctx, sql, args...)
+	_, err = m.db.Exec(ctx, sql, args...)
 	return fromModelToController(d), wrapifErrorInModel("create drink", err)
 }
 func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
@@ -52,7 +52,7 @@ func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont entities.Drink) (
 	if err != nil {
 		return fromModelToController(Drink{}), err
 	}
-	_, err = m.db.ExecContext(ctx, sql, args...)
+	_, err = m.db.Exec(ctx, sql, args...)
 
 	return fromModelToController(d), wrapifErrorInModel("update drink", err)
 }
@@ -61,13 +61,14 @@ func (m *SQLDrinkModel) DeleteDrink(ctx context.Context, name string) error {
 	if err != nil {
 		return wrapifErrorInModel("delete drink", err)
 	}
-	res, err := m.db.ExecContext(ctx, sql, args...)
-	if affected, _ := res.RowsAffected(); affected == 0 {
-		return ErrNotFound
-	}
+	res, err := m.db.Exec(ctx, sql, args...)
 	if err != nil {
 		return wrapifErrorInModel("delete drink", err)
 	}
+	if affected := res.RowsAffected(); affected == 0 {
+		return ErrNotFound
+	}
+
 	return nil
 }
 func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]entities.Drink, error) {
@@ -81,7 +82,7 @@ func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]
 		return nil, wrapifErrorInModel("drink by tags", err)
 	}
 
-	rows, err := m.db.QueryContext(ctx, sql, args...)
+	rows, err := m.db.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, wrapifErrorInModel("drink by tags", err)
 	}
@@ -102,7 +103,7 @@ func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]entities.Drink
 	if err != nil {
 		return nil, wrapifErrorInModel("all drinks", err)
 	}
-	rows, err := m.db.QueryContext(ctx, sql, args...)
+	rows, err := m.db.Query(ctx, sql, args...)
 	if err != nil {
 		return nil, wrapifErrorInModel("all drinks", err)
 	}
@@ -123,7 +124,7 @@ func (m *SQLDrinkModel) DrinkByName(ctx context.Context, name string) (entities.
 	if err != nil {
 		return entities.Drink{}, err
 	}
-	row := m.db.QueryRowContext(ctx, sql, args...)
+	row := m.db.QueryRow(ctx, sql, args...)
 	var d Drink
 	err = row.Scan(&d.name, &d.tags)
 
