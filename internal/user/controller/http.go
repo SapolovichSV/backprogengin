@@ -35,13 +35,6 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	router.Add("PATCH", "/"+pathRoutesName+"/user/fav", h.AddFav)
 }
 
-// JSON:
-//
-//	{
-//		"username": "string",
-//		"password": "string",
-//		"favourites": ["string"]
-//	}
 func (h *httpHandler) CreateUser(c echo.Context) error {
 	var user entities.User
 	if err := c.Bind(&user); err != nil {
