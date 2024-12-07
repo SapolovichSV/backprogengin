@@ -32,7 +32,7 @@ func (m *SQLUserModel) CreateUser(ctx context.Context, user entities.User) (enti
 		return entities.User{}, err
 	}
 	query := queries.New(m.db, ctx)
-	drinksId, err := query.DrinksNamesByDrinksId(user.FavouritesDrinkName)
+	drinksId, err := query.DrinksIdByDrinkNames(user.FavouritesDrinkName)
 	if err != nil {
 		return entities.User{}, err
 	}
@@ -49,7 +49,7 @@ func (m *SQLUserModel) CreateUser(ctx context.Context, user entities.User) (enti
 func (m *SQLUserModel) UserByID(ctx context.Context, id int) (entities.User, error) {
 	userRes := entities.User{}
 	query := queries.New(m.db, ctx)
-	userRes, err := query.UserAndHisFavsByUserID(id)
+	userRes, err := query.UserWithHisFavsByUserID(id)
 	if err != nil {
 		return entities.User{}, err
 	}
@@ -61,8 +61,8 @@ func (m *SQLUserModel) AddFav(ctx context.Context, drinkName string, userID int)
 	drinkID, err := query.DrinkIDByName(drinkName)
 	if err != nil {
 		return entities.User{}, err
-	}
-	res, err = query.UserAndHisFavsByUserID(userID)
+	} // err == nil
+	res, err = query.UserWithHisFavsByUserID(userID)
 	if err != nil {
 		return entities.User{}, err
 	}

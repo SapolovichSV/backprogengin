@@ -20,7 +20,7 @@ func New(db *pgxpool.Pool, ctx context.Context) *Query {
 		ctx: ctx,
 	}
 }
-func (q *Query) DrinksNamesByDrinksId(drinknames entities.Drinknames) ([]int, error) {
+func (q *Query) DrinksIdByDrinkNames(drinknames entities.Drinknames) ([]int, error) {
 	drinksId := make([]int, len(drinknames))
 	for i, drinkName := range drinknames {
 		sql := `SELECT id 
@@ -36,7 +36,7 @@ func (q *Query) DrinksNamesByDrinksId(drinknames entities.Drinknames) ([]int, er
 	}
 	return drinksId, nil
 }
-func (q *Query) UserAndHisFavsByUserID(id int) (entities.User, error) {
+func (q *Query) UserWithHisFavsByUserID(id int) (entities.User, error) {
 	queryUser := `SELECT users.username,users.password,drinks.name
         FROM users INNER JOIN drinks ON drinks.id IN (SELECT favs.drink_id
 	FROM favs
