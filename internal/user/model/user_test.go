@@ -62,6 +62,17 @@ func TestSQLUserModel_CreateUser(t *testing.T) {
 		drinks                     []drEnt.Drink
 	}{
 		{
+			name: "NoSuchDrinks",
+			beforeCreate: entities.User{
+				Username:            "Stas002",
+				Password:            "amahasla",
+				FavouritesDrinkName: entities.Drinknames{"cola", "pussy"},
+			},
+			wantErr:                    true,
+			mustCreateDrinksBeforeTest: false,
+			drinks:                     nil,
+		},
+		{
 			name: "SimpleTest",
 			beforeCreate: entities.User{
 				Username:            "Stas001",
@@ -76,16 +87,6 @@ func TestSQLUserModel_CreateUser(t *testing.T) {
 			},
 		},
 		{
-			name: "NoSuchDrinks",
-			beforeCreate: entities.User{
-				Username:            "Stas002",
-				Password:            "amahasla",
-				FavouritesDrinkName: entities.Drinknames{"cola", "pussy"},
-			},
-			wantErr:                    true,
-			mustCreateDrinksBeforeTest: false,
-			drinks:                     nil,
-		}, {
 			name: "BadUserName",
 			beforeCreate: entities.User{
 				Username:            "",
