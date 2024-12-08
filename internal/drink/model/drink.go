@@ -6,6 +6,7 @@ import (
 
 	"github.com/Masterminds/squirrel"
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
+	"github.com/SapolovichSV/backprogeng/internal/drink/model/queries"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -38,13 +39,16 @@ func New(db *pgxpool.Pool) *SQLDrinkModel {
 	}
 }
 func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
-	d := fromControllerToModel(dCont)
-	sql, args, err := sq.Insert("drinks").Columns("name", "tags").Values(d.name, d.tags).ToSql()
-	if err != nil {
-		return fromModelToController(Drink{}), wrapifErrorInModel("create drink", err)
+	q := queries.New(ctx, m.db)
+	if _, err := q.CreateDrink(dCont.Name); err != nil {
+		return entities.Drink{}, err
 	}
-	_, err = m.db.Exec(ctx, sql, args...)
-	return fromModelToController(d), wrapifErrorInModel("create drink", err)
+
+	resDrink, err := q.SetTagsToDrink(dCont.Name, dCont.Tags)
+	if err != nil {
+		return entities.Drink{}, err
+	}
+	return resDrink, nil
 }
 func (m *SQLDrinkModel) UpdateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
 	d := fromControllerToModel(dCont)

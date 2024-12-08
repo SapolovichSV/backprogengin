@@ -10,7 +10,7 @@ import (
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
 	"github.com/SapolovichSV/backprogeng/mocks"
 	"github.com/golang/mock/gomock"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 )
 

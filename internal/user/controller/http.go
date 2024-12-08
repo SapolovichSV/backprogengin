@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
-	"github.com/labstack/echo"
+	"github.com/labstack/echo/v4"
 )
 
 type storage interface {

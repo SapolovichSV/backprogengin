@@ -7,6 +7,7 @@ import (
 
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/stretchr/testify/assert"
 )
 
 const QUERY_CREATE_TABLES = `CREATE TABLE drinks (
@@ -251,5 +252,60 @@ func TestSQLDrinkModel_AllDrinks(t *testing.T) {
 	}
 	if !reflect.DeepEqual(drinks[0], drink1) || !reflect.DeepEqual(drinks[1], drink2) {
 		t.Errorf("Drinks do not match: got %v, want %v", drinks, []entities.Drink{drink1, drink2})
+	}
+}
+
+func TestSQLDrinkModel_DrinkByName(t *testing.T) {
+	db, err := pgxpool.New(context.TODO(), "host=localhost user=username password=password dbname=dbname sslmode=disable")
+	if err != nil {
+		t.Fatalf("Failed to connect to the database: %v", err)
+	}
+	defer db.Close()
+	_, err = db.Exec(context.TODO(), QUERY_CREATE_TABLES)
+	defer db.Exec(context.TODO(), QUERY_DROP_TABLES)
+	if err != nil {
+		t.Fatalf("Failed to create table: %v", err)
+	}
+	model := &SQLDrinkModel{db: db}
+
+	ctx := context.Background()
+	tests := []struct {
+		name                         string
+		want                         entities.Drink
+		wantErr                      bool
+		mustCreateDrinkBeforeTesting bool
+		drinks                       []entities.Drink
+	}{
+		{
+			name: "SimpleTest",
+			want: entities.Drink{
+				Name: "SimpleDrink",
+				Tags: []string{"tag1", "tag2"},
+			},
+			wantErr:                      false,
+			mustCreateDrinkBeforeTesting: true,
+			drinks: []entities.Drink{
+				{Name: "SimpleDrink", Tags: []string{"tag1", "tag2"}},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.mustCreateDrinkBeforeTesting {
+				for _, drink := range tt.drinks {
+					_, err := model.CreateDrink(ctx, drink)
+					assert.NoError(t, err)
+				}
+				if tt.wantErr {
+					_, err := model.DrinkByName(ctx, tt.want.Name)
+					assert.Error(t, err)
+				} else {
+					drink, err := model.DrinkByName(ctx, tt.want.Name)
+					assert.NoError(t, err)
+					assert.Equal(t, tt.want, drink)
+				}
+			}
+		})
 	}
 }

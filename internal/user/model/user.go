@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
-	"github.com/SapolovichSV/backprogeng/internal/user/model/modelerrors"
 	"github.com/SapolovichSV/backprogeng/internal/user/model/queries"
+	"github.com/SapolovichSV/backprogeng/internal/user/model/validate"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -25,10 +25,10 @@ func New(db *pgxpool.Pool) *SQLUserModel {
 }
 
 func (m *SQLUserModel) CreateUser(ctx context.Context, user entities.User) (entities.User, error) {
-	if err := modelerrors.ValidateUserName(user.Username); err != nil {
+	if err := validate.UserName(user.Username); err != nil {
 		return entities.User{}, err
 	}
-	if err := modelerrors.ValidatePassword(user.Password); err != nil {
+	if err := validate.VPassword(user.Password); err != nil {
 		return entities.User{}, err
 	}
 	query := queries.New(m.db, ctx)
