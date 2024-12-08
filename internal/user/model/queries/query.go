@@ -3,8 +3,8 @@ package queries
 import (
 	"context"
 
+	"github.com/SapolovichSV/backprogeng/internal/errlib"
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
-	"github.com/SapolovichSV/backprogeng/internal/user/model/modelerrors"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -29,9 +29,9 @@ func (q *Query) DrinksIdByDrinkNames(drinknames entities.Drinknames) ([]int, err
 		`
 		err := q.db.QueryRow(q.ctx, sql, drinkName).Scan(&drinksId[i])
 		if err == pgx.ErrNoRows {
-			return nil, modelerrors.NotFoundErr{Where: "drinks", What: drinkName}
+			return nil, errlib.NotFoundErr{Where: "drinks", What: drinkName}
 		} else if err != nil {
-			return nil, modelerrors.UnexpectedErr{Where: "drinks", Err: err}
+			return nil, errlib.UnexpectedErr{Where: "drinks", Err: err}
 		}
 	}
 	return drinksId, nil
@@ -55,9 +55,9 @@ WHERE users.id = $2;`
 		res.FavouritesDrinkName = append(res.FavouritesDrinkName, drinkName)
 	}
 	if row.Err() != nil {
-		return entities.User{}, modelerrors.WrapError(row.Err(), "users", "user")
+		return entities.User{}, errlib.WrapError(row.Err(), "users", "user")
 	} else if len(res.Username) == 0 {
-		return entities.User{}, modelerrors.NotFoundErr{Where: "users", What: "user"}
+		return entities.User{}, errlib.NotFoundErr{Where: "users", What: "user"}
 	}
 	return res, nil
 }
@@ -65,7 +65,7 @@ func (q *Query) AddToUserNewFavoriteDrink(userID int, drinkID int) error {
 	queryAddToUserNewFavDrink := `INSERT INTO favs (user_id,drink_id)
 	VALUES ($1,$2);`
 	if _, err := q.db.Exec(q.ctx, queryAddToUserNewFavDrink, userID, drinkID); err != nil {
-		return modelerrors.WrapError(err, "favs", "cannot add new favorite drink")
+		return errlib.WrapError(err, "favs", "cannot add new favorite drink")
 	}
 	return nil
 }
@@ -76,7 +76,7 @@ func (q *Query) DrinkIDByName(drinkname string) (int, error) {
 	`
 	var drinkID int
 	if err := q.db.QueryRow(q.ctx, queryGetDrinkID, drinkname).Scan(&drinkID); err != nil {
-		return 0, modelerrors.WrapError(err, "drinks", drinkname)
+		return 0, errlib.WrapError(err, "drinks", drinkname)
 	}
 	return drinkID, nil
 }
@@ -85,7 +85,7 @@ func (q *Query) CreateUser(username string, password string) (int, error) {
 	var userID int
 	err := q.db.QueryRow(q.ctx, sql, username, password).Scan(&userID)
 	if err != nil {
-		return 0, modelerrors.WrapError(err, "users", "cannot create user")
+		return 0, errlib.WrapError(err, "users", "cannot create user")
 	}
 	return userID, nil
 }

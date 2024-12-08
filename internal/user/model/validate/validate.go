@@ -1,4 +1,4 @@
-package modelerrors
+package validate
 
 type ValidateError struct {
 	What string
@@ -7,13 +7,13 @@ type ValidateError struct {
 func (e ValidateError) Error() string {
 	return e.What + " is invalid"
 }
-func ValidateUserName(username string) error {
+func UserName(username string) error {
 	if len(username) < 4 {
 		return ValidateError{What: "username"}
 	}
 	return nil
 }
-func ValidatePassword(password string) error {
+func VPassword(password string) error {
 	if len(password) < 4 {
 		return ValidateError{What: "password"}
 	}
