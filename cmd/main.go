@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"database/sql"
+	"log/slog"
 
 	"github.com/SapolovichSV/backprogeng/internal/config"
 	drinkController "github.com/SapolovichSV/backprogeng/internal/drink/controller"
 	drinkModel "github.com/SapolovichSV/backprogeng/internal/drink/model"
 	httpinfra "github.com/SapolovichSV/backprogeng/internal/http_infra"
+	"github.com/SapolovichSV/backprogeng/internal/logger"
 	userController "github.com/SapolovichSV/backprogeng/internal/user/controller"
 	userModel "github.com/SapolovichSV/backprogeng/internal/user/model"
 	"github.com/golang-migrate/migrate/v4"
@@ -23,10 +25,12 @@ func main() {
 	Run()
 }
 func Run() {
+	logger := logger.New(0)
 	//Чекаем переменные окружения чтобы подцепить бд и порт сервера
 	config := config.ListConfig()
+	logger.Info("Config parsed", "config", config)
 	//sudo docker run --rm --name db -p 5432:5432 -e POSTGRES_PASSWORD=pass123 -d postgres
-	migrateAndUp(&config)
+	migrateAndUp(&config, logger)
 
 	ctx := context.Background()
 	conn, err := pgxpool.New(ctx, config.DbAddr)
@@ -54,16 +58,20 @@ func Run() {
 		panic(err)
 	}
 }
-func migrateAndUp(config *config.Config) {
+func migrateAndUp(config *config.Config, logger *slog.Logger) {
 	db, err := sql.Open("pgx", config.DbAddr)
 	if err != nil {
 		panic(err)
 	}
+	if err := db.Ping(); err != nil {
+		panic(err)
+	}
+	logger.Info("Connected to db")
 	driver, err := postgres.WithInstance(db, &postgres.Config{})
 	if err != nil {
 		panic(err)
 	}
-	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://cmd/migrations", "postgres", driver)
 	if err != nil {
 		panic(err.Error())
 	}

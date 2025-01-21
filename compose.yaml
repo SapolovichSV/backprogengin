@@ -4,13 +4,23 @@ services:
       dockerfile: dockerfile
     ports:
       - "8080:8080"
+    networks:
+      - mynet
+    environment:
+      - PORT=8080
+      - DB_HOST=db
     depends_on:
       - db
   db:
     image: postgres
+    networks:
+      - mynet
     ports:
       - "5432:5432"
     environment:
       - POSTGRES_PASSWORD=pass123
       - POSTGRES_USER=postgres
-      - POSTGRES_DB=dbname
+      - POSTGRES_DB=postgres
+networks:
+  mynet:
+    driver: bridge
