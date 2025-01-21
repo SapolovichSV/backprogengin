@@ -1,0 +1,45 @@
+basePath: /api
+definitions:
+  entities.Drink:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+info:
+  contact: {}
+  description: This is a simple backend for a out web application
+  title: backProgeng API Info
+  version: "1.0"
+paths:
+  /drink:
+    post:
+      consumes:
+      - application/json
+      description: Creates a drink with the specified name and tags
+      parameters:
+      - description: 'Drink what we add with optional tags,if tags not: set tags will
+          be empty, name is required'
+        in: body
+        name: drink
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Drink'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.Drink'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Creates a drink
+swagger: "2.0"

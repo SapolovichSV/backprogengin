@@ -17,10 +17,12 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	// echo-swagger middleware
 )
 
-// @title Swagger Example
+// @title backProgeng API Info
+// @version 1.0
+// @description This is a simple backend for a out web application
+// @BasePath /api
 func main() {
 	Run()
 }
@@ -71,7 +73,7 @@ func migrateAndUp(config *config.Config, logger *slog.Logger) {
 	if err != nil {
 		panic(err)
 	}
-	m, err := migrate.NewWithDatabaseInstance("file://cmd/migrations", "postgres", driver)
+	m, err := migrate.NewWithDatabaseInstance("file://migrations", "postgres", driver)
 	if err != nil {
 		panic(err.Error())
 	}

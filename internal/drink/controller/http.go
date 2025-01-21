@@ -58,11 +58,22 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	router.Add("GET", "/"+pathRoutesName+"/drink/tag/:tag", h.drinksByTags)
 	//router.GET("/drink/tag/:tag", h.drinksByTags)
 	router.Add("GET", "/"+pathRoutesName+"/drink/id/:id", h.allDrinks)
+
 	//router.GET("/drink/id/:id", h.allDrinks)
 	router.Add("GET", "/"+pathRoutesName+"/drink/name/:name", h.drinkByName)
 	//router.GET("/drink/name/:name", h.drinkByName)
 }
 
+// Create drink godoc
+//
+//		@Summary Creates a drink
+//		@Description Creates a drink with the specified name and tags
+//		@Accept json
+//		@Produce json
+//		@Success 201 {object} entities.Drink
+//	 @Failure 500 {string} string
+//		@Param drink body entities.Drink true "Drink what we add with optional tags,if tags not: set tags will be empty, name is required"
+//		@Router /drink [post]
 func (h *httpHandler) createDrink(c echo.Context) error {
 	var drink entities.Drink
 	if err := c.Bind(&drink); err != nil {
