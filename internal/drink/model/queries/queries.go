@@ -32,16 +32,11 @@ func (q *Query) DrinkByName(name string) (entities.Drink, error) {
 	return drink, nil
 }
 func (q *Query) CreateDrink(drinkName string) (entities.Drink, error) {
-	connect, err := q.db.Acquire(q.ctx)
-	defer connect.Release()
-	if err != nil {
-		return entities.Drink{}, errlib.WrapError(err, "drinks", "can't get connection when create drink")
-	}
 
 	sql := `INSERT INTO drinks
 	(name)
 	VALUES($1);`
-	_, err = connect.Exec(q.ctx, sql, drinkName)
+	_, err := q.db.Exec(q.ctx, sql, drinkName)
 	if err != nil {
 		return entities.Drink{}, errlib.WrapError(err, "drinks", "drink can't be created")
 	}
@@ -49,31 +44,30 @@ func (q *Query) CreateDrink(drinkName string) (entities.Drink, error) {
 	sql = `SELECT id,name
 	FROM drinks
 	WHERE name=$1;`
-	err = connect.QueryRow(q.ctx, sql, drinkName).Scan(&resultDrink.ID, &resultDrink.Name)
+	err = q.db.QueryRow(q.ctx, sql, drinkName).Scan(&resultDrink.ID, &resultDrink.Name)
 	if err != nil {
 		return entities.Drink{}, errlib.WrapError(err, "drinks", "drink was created but not found")
 	}
 	return resultDrink, nil
 }
-func (q *Query) SetTagsToDrink(drinkname string, tags []string) (entities.Drink, error) {
-	connect, err := q.db.Acquire(q.ctx)
-	defer connect.Release()
-	if err != nil {
-		return entities.Drink{}, errlib.WrapError(err, "drinks", "can't get connection when set tags to drink")
-	}
+func (q *Query) SetTagsToDrink(drinkname string, tags tags) (entities.Drink, error) {
 
 	sql := `UPDATE drinks
 	SET tags = $1
 	WHERE name = $2;`
-	_, err = connect.Exec(q.ctx, sql, tags, drinkname)
+	_, err := q.db.Exec(q.ctx, sql, tags, drinkname)
 	if err != nil {
 		return entities.Drink{}, errlib.WrapError(err, "drinks", "tags can't be set to drink")
 	}
+
 	var resultDrink entities.Drink
+	haveTags := ToTags([]string{})
+
 	sql = `SELECT id,name,tags
 	FROM drinks
 	WHERE name=$1;`
-	err = connect.QueryRow(q.ctx, sql, drinkname).Scan(&resultDrink.ID, &resultDrink.Name, &resultDrink.Tags)
+	err = q.db.QueryRow(q.ctx, sql, drinkname).Scan(&resultDrink.ID, &resultDrink.Name, &haveTags)
+	resultDrink.Tags = FromTags(haveTags)
 	if err != nil {
 		return entities.Drink{}, errlib.WrapError(err, "drinks", "tags was set but drink not found")
 	}

@@ -44,7 +44,7 @@ func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont entities.Drink) (
 		return entities.Drink{}, err
 	}
 
-	resDrink, err := q.SetTagsToDrink(dCont.Name, dCont.Tags)
+	resDrink, err := q.SetTagsToDrink(dCont.Name, queries.ToTags(dCont.Tags))
 	if err != nil {
 		return entities.Drink{}, err
 	}

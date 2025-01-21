@@ -1,4 +1,4 @@
-package model
+package queries
 
 import (
 	"database/sql/driver"
@@ -35,4 +35,18 @@ func (t *tags) Scan(src interface{}) error {
 	default:
 		return fmt.Errorf("could not convert %T to tags", src)
 	}
+}
+func ToTags(tgs []string) tags {
+	var t tags
+	for _, v := range tgs {
+		t = append(t, tag{Name: v})
+	}
+	return t
+}
+func FromTags(t tags) []string {
+	var tgs []string
+	for _, v := range t {
+		tgs = append(tgs, v.Name)
+	}
+	return tgs
 }
