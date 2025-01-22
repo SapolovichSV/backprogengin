@@ -64,15 +64,16 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	//router.GET("/drink/name/:name", h.drinkByName)
 }
 
-// Create drink godoc
+// createDrink godoc
 //
 //		@Summary Creates a drink
 //		@Description Creates a drink with the specified name and tags
+//		@Tags drink
 //		@Accept json
 //		@Produce json
 //		@Success 201 {object} entities.Drink
-//	 @Failure 500 {string} string
-//		@Param drink body entities.Drink true "Drink what we add with optional tags,if tags not: set tags will be empty, name is required"
+//	 	@Failure 500 {string} string
+//		@Param drink body entities.Drink true "Drink what we add with optional tags,if tags not: set tags will be empty, name is required,"
 //		@Router /drink [post]
 func (h *httpHandler) createDrink(c echo.Context) error {
 	var drink entities.Drink
@@ -85,6 +86,18 @@ func (h *httpHandler) createDrink(c echo.Context) error {
 	}
 	return c.JSON(http.StatusCreated, d)
 }
+
+// updateDrink godoc
+//
+//		@Summary Updates drink tags
+//		@Description Updates drink tags with the specified name(old tags will be deleted)
+//		@Tags drink
+//		@Accept json
+//		@Produce json
+//		@Success 200 {object} entities.Drink
+//		@Failure 500 {string} string
+//		@Param drink body entities.Drink true "Drink what we update with optional tags,if tags not: set tags will be empty, name is required,"
+//	 @Router /drink [put]
 func (h *httpHandler) updateDrink(c echo.Context) error {
 	var drink entities.Drink
 	if err := c.Bind(&drink); err != nil {
@@ -96,6 +109,19 @@ func (h *httpHandler) updateDrink(c echo.Context) error {
 	}
 	return c.JSON(200, d)
 }
+
+// deleteDrink godoc
+//
+//		@Summary Deletes a drink
+//		@Description Deletes a drink with the specified name,other fields will be ignored
+//		@Tags drink
+//	 @Accept plain
+//		@Produce json
+//		@Success 200 {string} deleted
+//		@Failure 404 {string} string
+//		@Failure 500 {string} string
+//		@Param name	path string	true "Name of the drink to delete"
+//		@Router /drink/{name} [delete]
 func (h *httpHandler) deleteDrink(c echo.Context) error {
 	name := c.Param("name")
 	err := h.st.DeleteDrink(h.ctx, name)
@@ -106,6 +132,20 @@ func (h *httpHandler) deleteDrink(c echo.Context) error {
 	}
 	return c.JSON(200, "deleted")
 }
+
+// drinksByTags godoc
+// @Summary Get drinks by tags
+// @Description Get drinks by tags
+//
+//	@Tags drink
+//
+// @Accept plain
+// @Produce json
+// @Success 200 {array} entities.Drink
+// @Failure 404 {string} string "Not found"
+// @Failure 500 {string} string "Internal server error"
+// @Param tag path string true "tasty sweet spicy"
+// @Router /drink/tag/{tag} [get]
 func (h *httpHandler) drinksByTags(c echo.Context) error {
 	tag := c.Param("tag")
 	d, err := h.st.DrinksByTags(h.ctx, []string{tag})
@@ -116,6 +156,19 @@ func (h *httpHandler) drinksByTags(c echo.Context) error {
 	}
 	return c.JSON(200, d)
 }
+
+// allDrinks godoc
+// @Summary Get all drinks
+// @Description Get all drinks with offset = id
+//
+//	@Tags drink
+//
+// @Accept plain
+// @Produce json
+// @Success 200 {array} entities.Drink
+// @Failure 500 {string} string "Internal server error"
+// @Param id path int true "id"
+// @Router /drink/id/{id} [get]
 func (h *httpHandler) allDrinks(c echo.Context) error {
 	param := c.Param("id")
 	id, err := strconv.Atoi(param)
@@ -128,6 +181,20 @@ func (h *httpHandler) allDrinks(c echo.Context) error {
 	}
 	return c.JSON(200, d)
 }
+
+// drinkByName godoc
+// @Summary Get drink by name
+// @Description Get drink by name
+//
+//	@Tags drink
+//
+// @Accept plain
+// @Produce json
+// @Success 200 {object} entities.Drink
+// @Failure 404 {string} string "Not found"
+// @Failure 500 {string} string "Internal server error"
+// @Param name path string true "Name of the drink"
+// @Router /drink/name/{name} [get]
 func (h *httpHandler) drinkByName(c echo.Context) error {
 	name := c.Param("name")
 	d, err := h.st.DrinkByName(h.ctx, name)

@@ -35,6 +35,18 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	router.Add("PATCH", "/"+pathRoutesName+"/user/fav", h.AddFav)
 }
 
+// CreateUser godoc
+// @Summary Create a user
+// @Description field id will be ignored
+// @Description id will be in response
+// @Description Create a user,with his favourite drinks(optional),if such drinks non-existent: error,
+// @Description otherwise return created user
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param user body entities.User true "User object"
+// @Success 201 {object} entities.User
+// @Router /user [post]
 func (h *httpHandler) CreateUser(c echo.Context) error {
 	var user entities.User
 	if err := c.Bind(&user); err != nil {
@@ -47,6 +59,17 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 	return c.JSON(http.StatusCreated, user)
 }
 
+// UserByID godoc
+// @Summary Get user by ID
+// @Description Get user by ID
+// @Tags user
+// @Accept plain
+// @Produce json
+// @Param id path int true "User ID"
+// @Success 200 {object} entities.User
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /user/{id} [get]
 func (h *httpHandler) UserByID(c echo.Context) error {
 	id, err := getParamId("id", c)
 	if err != nil {
@@ -68,16 +91,26 @@ func getParamId(paramName string, c echo.Context) (int, error) {
 	return id, err
 }
 
+// AddFav godoc
+// @Summary Add a favourite drink to user
+// @Description Add a favourite drink to user
+// @Tags user
+// @Accept json
+// @Produce json
+// @Param drinkname path string true "Drink name"
+// @Param id path int true "User ID"
+// @Success 202 {object} entities.User
+// @Failure 400 {object} string
+// @Failure 500 {object} string
+// @Router /user/fav [patch]
 func (h *httpHandler) AddFav(c echo.Context) error {
-	type inp struct {
-		DrinkName string `json:"drinkname"`
-		ID        int    `json:"id"`
-	}
-	var input inp
-	if err := c.Bind(&input); err != nil {
+
+	drinkName := c.Param("drinkname")
+	id, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
 		c.JSON(http.StatusBadRequest, err)
 	}
-	user, err := h.st.AddFav(h.ctx, input.DrinkName, input.ID)
+	user, err := h.st.AddFav(h.ctx, drinkName, id)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}

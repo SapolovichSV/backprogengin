@@ -3,13 +3,31 @@ definitions:
   entities.Drink:
     properties:
       id:
+        example: 12
         type: integer
       name:
+        example: Coca Cola
         type: string
       tags:
+        example:
+        - '["soda"'
+        - '"cola"]'
         items:
           type: string
         type: array
+    type: object
+  entities.User:
+    properties:
+      drinknames:
+        items:
+          type: string
+        type: array
+      id:
+        type: integer
+      password:
+        type: string
+      username:
+        type: string
     type: object
 info:
   contact: {}
@@ -24,7 +42,7 @@ paths:
       description: Creates a drink with the specified name and tags
       parameters:
       - description: 'Drink what we add with optional tags,if tags not: set tags will
-          be empty, name is required'
+          be empty, name is required,'
         in: body
         name: drink
         required: true
@@ -42,4 +60,237 @@ paths:
           schema:
             type: string
       summary: Creates a drink
+      tags:
+      - drink
+    put:
+      consumes:
+      - application/json
+      description: Updates drink tags with the specified name(old tags will be deleted)
+      parameters:
+      - description: 'Drink what we update with optional tags,if tags not: set tags
+          will be empty, name is required,'
+        in: body
+        name: drink
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Drink'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Drink'
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Updates drink tags
+      tags:
+      - drink
+  /drink/{name}:
+    delete:
+      consumes:
+      - text/plain
+      description: Deletes a drink with the specified name,other fields will be ignored
+      parameters:
+      - description: Name of the drink to delete
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "404":
+          description: Not Found
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Deletes a drink
+      tags:
+      - drink
+  /drink/id/{id}:
+    get:
+      consumes:
+      - text/plain
+      description: Get all drinks with offset = id
+      parameters:
+      - description: id
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Drink'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get all drinks
+      tags:
+      - drink
+  /drink/name/{name}:
+    get:
+      consumes:
+      - text/plain
+      description: Get drink by name
+      parameters:
+      - description: Name of the drink
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Drink'
+        "404":
+          description: Not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get drink by name
+      tags:
+      - drink
+  /drink/tag/{tag}:
+    get:
+      consumes:
+      - text/plain
+      description: Get drinks by tags
+      parameters:
+      - description: tasty sweet spicy
+        in: path
+        name: tag
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/entities.Drink'
+            type: array
+        "404":
+          description: Not found
+          schema:
+            type: string
+        "500":
+          description: Internal server error
+          schema:
+            type: string
+      summary: Get drinks by tags
+      tags:
+      - drink
+  /user:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        field id will be ignored
+        id will be in response
+        Create a user,with his favourite drinks(optional),if such drinks non-existent: error,
+        otherwise return created user
+      parameters:
+      - description: User object
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/entities.User'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/entities.User'
+      summary: Create a user
+      tags:
+      - user
+  /user/{id}:
+    get:
+      consumes:
+      - text/plain
+      description: Get user by ID
+      parameters:
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Get user by ID
+      tags:
+      - user
+  /user/fav:
+    patch:
+      consumes:
+      - application/json
+      description: Add a favourite drink to user
+      parameters:
+      - description: Drink name
+        in: path
+        name: drinkname
+        required: true
+        type: string
+      - description: User ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/entities.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Add a favourite drink to user
+      tags:
+      - user
 swagger: "2.0"

@@ -16,6 +16,44 @@ const docTemplate = `{
     "basePath": "{{.BasePath}}",
     "paths": {
         "/drink": {
+            "put": {
+                "description": "Updates drink tags with the specified name(old tags will be deleted)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "drink"
+                ],
+                "summary": "Updates drink tags",
+                "parameters": [
+                    {
+                        "description": "Drink what we update with optional tags,if tags not: set tags will be empty, name is required,",
+                        "name": "drink",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.Drink"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.Drink"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Creates a drink with the specified name and tags",
                 "consumes": [
@@ -24,10 +62,13 @@ const docTemplate = `{
                 "produces": [
                     "application/json"
                 ],
+                "tags": [
+                    "drink"
+                ],
                 "summary": "Creates a drink",
                 "parameters": [
                     {
-                        "description": "Drink what we add with optional tags,if tags not: set tags will be empty, name is required",
+                        "description": "Drink what we add with optional tags,if tags not: set tags will be empty, name is required,",
                         "name": "drink",
                         "in": "body",
                         "required": true,
@@ -51,6 +92,311 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/drink/id/{id}": {
+            "get": {
+                "description": "Get all drinks with offset = id",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "drink"
+                ],
+                "summary": "Get all drinks",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entities.Drink"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/drink/name/{name}": {
+            "get": {
+                "description": "Get drink by name",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "drink"
+                ],
+                "summary": "Get drink by name",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the drink",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.Drink"
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/drink/tag/{tag}": {
+            "get": {
+                "description": "Get drinks by tags",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "drink"
+                ],
+                "summary": "Get drinks by tags",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "tasty sweet spicy",
+                        "name": "tag",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/entities.Drink"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/drink/{name}": {
+            "delete": {
+                "description": "Deletes a drink with the specified name,other fields will be ignored",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "drink"
+                ],
+                "summary": "Deletes a drink",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Name of the drink to delete",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user": {
+            "post": {
+                "description": "field id will be ignored\nid will be in response\nCreate a user,with his favourite drinks(optional),if such drinks non-existent: error,\notherwise return created user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create a user",
+                "parameters": [
+                    {
+                        "description": "User object",
+                        "name": "user",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/entities.User"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/fav": {
+            "patch": {
+                "description": "Add a favourite drink to user",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Add a favourite drink to user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Drink name",
+                        "name": "drinkname",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "202": {
+                        "description": "Accepted",
+                        "schema": {
+                            "$ref": "#/definitions/entities.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/{id}": {
+            "get": {
+                "description": "Get user by ID",
+                "consumes": [
+                    "text/plain"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get user by ID",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.User"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -58,16 +404,42 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "id": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 12
                 },
                 "name": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Coca Cola"
                 },
                 "tags": {
                     "type": "array",
                     "items": {
                         "type": "string"
+                    },
+                    "example": [
+                        "[\"soda\"",
+                        "\"cola\"]"
+                    ]
+                }
+            }
+        },
+        "entities.User": {
+            "type": "object",
+            "properties": {
+                "drinknames": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         }
