@@ -41,10 +41,10 @@ func New() *authMiddle {
 		secretKey: parseSecretKey(),
 	}
 }
-func (a *authMiddle) Register(c echo.Context, user entities.User) error {
+func (a *authMiddle) Register(c echo.Context, user entities.User) (echo.Context, error) {
 
 	if err := c.Bind(&user); err != nil {
-		return errlib.WrapErr(err, "failing to get user data from http request")
+		return nil, errlib.WrapErr(err, "failing to get user data from http request")
 	}
 	claims := jwtCustomClaims{
 		user.ID,
@@ -57,45 +57,45 @@ func (a *authMiddle) Register(c echo.Context, user entities.User) error {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	t, err := token.SignedString([]byte(a.secretKey.key))
 	if err != nil {
-		return errlib.WrapErr(err, "failing to sign token")
+		return nil, errlib.WrapErr(err, "failing to sign token")
 	}
 	cookie := http.Cookie{
 		Name:  "token",
 		Value: t,
 	}
 	c.SetCookie(&cookie)
-	return nil
+	return c, nil
 }
-func (a *authMiddle) Auth(c echo.Context) (entities.User, error) {
+func (a *authMiddle) Auth(c echo.Context) (echo.Context, entities.User, error) {
 	cookie, err := c.Cookie("token")
 	if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "failing to get cookie with user Info")
+		return nil, entities.User{}, errlib.WrapErr(err, "failing to get cookie with user Info")
 	}
 	claims, err := getClaims(cookie, a.secretKey.key)
 	if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "failing to get claims from token")
+		return nil, entities.User{}, errlib.WrapErr(err, "failing to get claims from token")
 	}
 	user := entities.User{
 		ID:       claims.id,
 		Username: claims.Username,
 		Password: claims.Password,
 	}
-	return user, nil
+	return c, user, nil
 }
-func (a *authMiddle) Login(c echo.Context) (entities.User, error) {
+func (a *authMiddle) Login(c echo.Context) (echo.Context, entities.User, error) {
 	cookie, err := c.Cookie("token")
 	if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "failing to get cookie with user Info")
+		return nil, entities.User{}, errlib.WrapErr(err, "failing to get cookie with user Info")
 	}
 	claims, err := getClaims(cookie, a.secretKey.key)
 	if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "failing to get claims from token")
+		return nil, entities.User{}, errlib.WrapErr(err, "failing to get claims from token")
 	}
 	claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Hour * 2))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	t, err := token.SignedString([]byte(a.secretKey.key))
 	if err != nil {
-		return entities.User{}, errlib.WrapErr(err, "failing to sign token")
+		return nil, entities.User{}, errlib.WrapErr(err, "failing to sign token")
 	}
 	cookie = &http.Cookie{
 		Name:  "token",
@@ -107,7 +107,7 @@ func (a *authMiddle) Login(c echo.Context) (entities.User, error) {
 		Username: claims.Username,
 		Password: claims.Password,
 	}
-	return user, nil
+	return c, user, nil
 }
 
 func getClaims(cookie *http.Cookie, key string) (jwtCustomClaims, error) {
