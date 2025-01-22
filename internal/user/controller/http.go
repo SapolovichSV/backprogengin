@@ -3,7 +3,6 @@ package controller
 import (
 	"context"
 	"net/http"
-	"strconv"
 
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
 	"github.com/labstack/echo/v4"
@@ -14,18 +13,25 @@ type storage interface {
 	UserByID(context.Context, int) (entities.User, error)
 	AddFav(ctx context.Context, drinkName string, userID int) (entities.User, error)
 }
+type authService interface {
+	Auth(c echo.Context) (entities.User, error)
+	Login(c echo.Context) (entities.User, error)
+	Register(c echo.Context, user entities.User) error
+}
 type httpHandler struct {
 	st   storage
 	echo *echo.Echo
 	ctx  context.Context
+	auth authService
 }
 
-func New(st storage, ctx context.Context) *httpHandler {
+func New(st storage, auth authService, ctx context.Context) *httpHandler {
 	e := echo.New()
 	return &httpHandler{
 		st:   st,
 		echo: e,
 		ctx:  ctx,
+		auth: auth,
 	}
 }
 
@@ -37,6 +43,7 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 
 // CreateUser godoc
 // @Summary Create a user
+// @Decsription assigment to user cookie(jwt token) wih user info
 // @Description field id will be ignored
 // @Description id will be in response
 // @Description Create a user,with his favourite drinks(optional),if such drinks non-existent: error,
@@ -50,45 +57,51 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 func (h *httpHandler) CreateUser(c echo.Context) error {
 	var user entities.User
 	if err := c.Bind(&user); err != nil {
-		c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err)
 	}
+
 	user, err := h.st.CreateUser(h.ctx, user)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	if err := h.auth.Register(c, user); err != nil {
+		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusCreated, user)
 }
 
+func (h *httpHandler) Login(c echo.Context) error {
+	user, err := h.auth.Login(c)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, err)
+	}
+	user, err = h.st.UserByID(h.ctx, user.ID)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	return c.JSON(http.StatusOK, user)
+}
+
 // UserByID godoc
-// @Summary Get user by ID
-// @Description Get user by ID
+// @Summary Get user
+// @Description Get user by ID(which contains in cookie: jwt token)
 // @Tags user
 // @Accept plain
 // @Produce json
-// @Param id path int true "User ID"
 // @Success 200 {object} entities.User
 // @Failure 400 {object} string
 // @Failure 500 {object} string
 // @Router /user/{id} [get]
 func (h *httpHandler) UserByID(c echo.Context) error {
-	id, err := getParamId("id", c)
+	userInfo, err := h.auth.Auth(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err)
+		c.JSON(http.StatusUnauthorized, err)
 	}
-	user, err := h.st.UserByID(h.ctx, id)
+	user, err := h.st.UserByID(h.ctx, userInfo.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, user)
-}
-
-func getParamId(paramName string, c echo.Context) (int, error) {
-	param := c.Param(paramName)
-	id, err := strconv.Atoi(param)
-	if err != nil {
-		return 0, err
-	}
-	return id, err
 }
 
 // AddFav godoc
@@ -98,7 +111,6 @@ func getParamId(paramName string, c echo.Context) (int, error) {
 // @Accept json
 // @Produce json
 // @Param drinkname path string true "Drink name"
-// @Param id path int true "User ID"
 // @Success 202 {object} entities.User
 // @Failure 400 {object} string
 // @Failure 500 {object} string
@@ -106,11 +118,11 @@ func getParamId(paramName string, c echo.Context) (int, error) {
 func (h *httpHandler) AddFav(c echo.Context) error {
 
 	drinkName := c.Param("drinkname")
-	id, err := strconv.Atoi(c.Param("id"))
+	userInfo, err := h.auth.Auth(c)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, err)
+		c.JSON(http.StatusUnauthorized, err)
 	}
-	user, err := h.st.AddFav(h.ctx, drinkName, id)
+	user, err := h.st.AddFav(h.ctx, drinkName, userInfo.ID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, err)
 	}

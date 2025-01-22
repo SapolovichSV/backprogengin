@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"log/slog"
 
+	"github.com/SapolovichSV/backprogeng/internal/authmiddleware"
 	"github.com/SapolovichSV/backprogeng/internal/config"
 	drinkController "github.com/SapolovichSV/backprogeng/internal/drink/controller"
 	drinkModel "github.com/SapolovichSV/backprogeng/internal/drink/model"
@@ -45,7 +46,9 @@ func Run() {
 
 	//Создаём контроллер дринков
 	drinkHandler := drinkController.New(modelDrink, ctx)
-	userHandler := userController.New(modelUser, ctx)
+
+	authmiddle := authmiddleware.New()
+	userHandler := userController.New(modelUser, authmiddle, ctx)
 	//Создаём сервер и в его роутер записываем роуты дринктов и еще юзеров(ещё их не наиписал)
 	server := httpinfra.NewServer(config.Port)
 	router := server.GetRouter()
