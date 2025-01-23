@@ -14,9 +14,9 @@ type storage interface {
 	AddFav(ctx context.Context, drinkName string, userID int) (entities.User, error)
 }
 type authService interface {
-	Auth(c *echo.Context) (entities.User, error)
-	Login(c *echo.Context) (entities.User, error)
-	Register(c *echo.Context, user entities.User) error
+	Auth(c echo.Context) (entities.User, error)
+	Login(c echo.Context) (entities.User, error)
+	Register(c echo.Context, user entities.User) error
 }
 type httpHandler struct {
 	st   storage
@@ -64,7 +64,7 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
-	if err := h.auth.Register(&c, user); err != nil {
+	if err := h.auth.Register(c, user); err != nil {
 		return c.JSON(http.StatusBadRequest, err)
 	}
 	return c.JSON(http.StatusCreated, user)
@@ -82,7 +82,7 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 // @Failure 401 {object} string
 // @Failure 500 {object} string
 func (h *httpHandler) Login(c echo.Context) error {
-	user, err := h.auth.Login(&c)
+	user, err := h.auth.Login(c)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
 	}
@@ -104,7 +104,7 @@ func (h *httpHandler) Login(c echo.Context) error {
 // @Failure 500 {object} string
 // @Router /user/{id} [get]
 func (h *httpHandler) UserByID(c echo.Context) error {
-	userInfo, err := h.auth.Auth(&c)
+	userInfo, err := h.auth.Auth(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, err)
 	}
@@ -129,7 +129,7 @@ func (h *httpHandler) UserByID(c echo.Context) error {
 func (h *httpHandler) AddFav(c echo.Context) error {
 
 	drinkName := c.Param("drinkname")
-	userInfo, err := h.auth.Auth(&c)
+	userInfo, err := h.auth.Auth(c)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, err)
 	}

@@ -2,6 +2,7 @@ package authmiddleware
 
 import (
 	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"testing"
 
@@ -21,23 +22,28 @@ func Test_authMiddle_Register(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    echo.Context
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:   "Valid registration",
+			fields: fields{secretKey: secretKey{key: "testkey"}},
+			args: func() args {
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodPost, "/", nil)
+				rec := httptest.NewRecorder()
+				c := e.NewContext(req, rec)
+				return args{c: c, user: entities.User{ID: 1, Username: "TestUser", Password: "123"}}
+			}(),
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &authMiddle{
 				secretKey: tt.fields.secretKey,
 			}
-			got, err := a.Register(tt.args.c, tt.args.user)
-			if (err != nil) != tt.wantErr {
+			if err := a.Register(tt.args.c, tt.args.user); (err != nil) != tt.wantErr {
 				t.Errorf("authMiddle.Register() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("authMiddle.Register() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -54,27 +60,48 @@ func Test_authMiddle_Auth(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    echo.Context
-		want1   entities.User
+		want    entities.User
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:   "No token cookie",
+			fields: fields{secretKey: secretKey{key: "testkey"}},
+			args: func() args {
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				rec := httptest.NewRecorder()
+				return args{c: e.NewContext(req, rec)}
+			}(),
+			want:    entities.User{},
+			wantErr: true,
+		},
+		{
+			name:   "Invalid token cookie",
+			fields: fields{secretKey: secretKey{key: "testkey"}},
+			args: func() args {
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				cookie := &http.Cookie{Name: "token", Value: "broken.token"}
+				req.AddCookie(cookie)
+				rec := httptest.NewRecorder()
+				return args{c: e.NewContext(req, rec)}
+			}(),
+			want:    entities.User{},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &authMiddle{
 				secretKey: tt.fields.secretKey,
 			}
-			got, got1, err := a.Auth(tt.args.c)
+			got, err := a.Auth(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authMiddle.Auth() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("authMiddle.Auth() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("authMiddle.Auth() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("authMiddle.Auth() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -91,27 +118,48 @@ func Test_authMiddle_Login(t *testing.T) {
 		name    string
 		fields  fields
 		args    args
-		want    echo.Context
-		want1   entities.User
+		want    entities.User
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name:   "No cookie",
+			fields: fields{secretKey: secretKey{key: "testkey"}},
+			args: func() args {
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				rec := httptest.NewRecorder()
+				return args{c: e.NewContext(req, rec)}
+			}(),
+			want:    entities.User{},
+			wantErr: true,
+		},
+		{
+			name:   "Invalid token cookie",
+			fields: fields{secretKey: secretKey{key: "testkey"}},
+			args: func() args {
+				e := echo.New()
+				req := httptest.NewRequest(http.MethodGet, "/", nil)
+				cookie := &http.Cookie{Name: "token", Value: "broken.token"}
+				req.AddCookie(cookie)
+				rec := httptest.NewRecorder()
+				return args{c: e.NewContext(req, rec)}
+			}(),
+			want:    entities.User{},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			a := &authMiddle{
 				secretKey: tt.fields.secretKey,
 			}
-			got, got1, err := a.Login(tt.args.c)
+			got, err := a.Login(tt.args.c)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("authMiddle.Login() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("authMiddle.Login() got = %v, want %v", got, tt.want)
-			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("authMiddle.Login() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("authMiddle.Login() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -128,7 +176,30 @@ func Test_getClaims(t *testing.T) {
 		want    jwtCustomClaims
 		wantErr bool
 	}{
-		// TODO: Add test cases.
+		{
+			name: "No cookie",
+			args: args{
+				cookie: nil,
+				key:    "testkey",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Empty cookie",
+			args: args{
+				cookie: &http.Cookie{Name: "token", Value: ""},
+				key:    "testkey",
+			},
+			wantErr: true,
+		},
+		{
+			name: "Broken token",
+			args: args{
+				cookie: &http.Cookie{Name: "token", Value: "broken.token"},
+				key:    "testkey",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
