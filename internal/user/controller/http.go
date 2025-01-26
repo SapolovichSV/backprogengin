@@ -53,11 +53,13 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 // @Produce json
 // @Param user body entities.User true "User object"
 // @Success 201 {object} entities.User
+// @Failure 400 {object} string
+// @Failure 500 {object} string
 // @Router /user [post]
 func (h *httpHandler) CreateUser(c echo.Context) error {
 	var user entities.User
 	if err := c.Bind(&user); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return c.JSON(http.StatusBadRequest, err.Error())
 	}
 
 	user, err := h.st.CreateUser(h.ctx, user)

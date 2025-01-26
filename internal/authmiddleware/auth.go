@@ -51,9 +51,6 @@ func New() *authMiddle {
 }
 func (a *authMiddle) Register(c echo.Context, user entities.User) error {
 
-	if err := c.Bind(&user); err != nil {
-		return errlib.WrapErr(err, "failing to get user data from http request")
-	}
 	claims := jwtCustomClaims{
 		user.ID,
 		user.Username,
