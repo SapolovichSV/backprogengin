@@ -234,13 +234,7 @@ paths:
     get:
       consumes:
       - text/plain
-      description: Get user by ID
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
+      description: 'Get user by ID(which contains in cookie: jwt token)'
       produces:
       - application/json
       responses:
@@ -256,7 +250,7 @@ paths:
           description: Internal Server Error
           schema:
             type: string
-      summary: Get user by ID
+      summary: Get user
       tags:
       - user
   /user/fav:
@@ -270,11 +264,6 @@ paths:
         name: drinkname
         required: true
         type: string
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: integer
       produces:
       - application/json
       responses:

@@ -323,13 +323,6 @@ const docTemplate = `{
                         "name": "drinkname",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
                     }
                 ],
                 "responses": {
@@ -356,7 +349,7 @@ const docTemplate = `{
         },
         "/user/{id}": {
             "get": {
-                "description": "Get user by ID",
+                "description": "Get user by ID(which contains in cookie: jwt token)",
                 "consumes": [
                     "text/plain"
                 ],
@@ -366,16 +359,7 @@ const docTemplate = `{
                 "tags": [
                     "user"
                 ],
-                "summary": "Get user by ID",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "User ID",
-                        "name": "id",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
+                "summary": "Get user",
                 "responses": {
                     "200": {
                         "description": "OK",
