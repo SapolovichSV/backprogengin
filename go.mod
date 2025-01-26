@@ -36,6 +36,7 @@ require (
 	github.com/swaggo/files/v2 v2.0.2 // indirect
 	github.com/swaggo/swag v1.16.4 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
+	go.uber.org/mock v0.5.0 // indirect
 	golang.org/x/sync v0.10.0 // indirect
 	golang.org/x/time v0.8.0 // indirect
 	golang.org/x/tools v0.29.0 // indirect

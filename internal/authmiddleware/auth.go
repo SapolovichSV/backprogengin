@@ -12,6 +12,14 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+// copypast of the same code from internal/user/controller/http.go
+// because need to mock
+// TODO: refactor to use only one copy of this code
+type authService interface {
+	Auth(c echo.Context) (entities.User, error)
+	Login(c echo.Context) (entities.User, error)
+	Register(c echo.Context, user entities.User) error
+}
 type secretKey struct {
 	key string
 }

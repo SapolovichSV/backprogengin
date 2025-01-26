@@ -106,11 +106,11 @@ func (h *httpHandler) Login(c echo.Context) error {
 func (h *httpHandler) UserByID(c echo.Context) error {
 	userInfo, err := h.auth.Auth(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, err)
+		return c.JSON(http.StatusUnauthorized, err)
 	}
 	user, err := h.st.UserByID(h.ctx, userInfo.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusOK, user)
 }
@@ -131,11 +131,11 @@ func (h *httpHandler) AddFav(c echo.Context) error {
 	drinkName := c.Param("drinkname")
 	userInfo, err := h.auth.Auth(c)
 	if err != nil {
-		c.JSON(http.StatusUnauthorized, err)
+		return c.JSON(http.StatusUnauthorized, err)
 	}
 	user, err := h.st.AddFav(h.ctx, drinkName, userInfo.ID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, err)
+		return c.JSON(http.StatusInternalServerError, err)
 	}
 	return c.JSON(http.StatusAccepted, user)
 }

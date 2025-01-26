@@ -8,10 +8,10 @@ import (
 	"testing"
 
 	"github.com/SapolovichSV/backprogeng/internal/drink/entities"
-	"github.com/SapolovichSV/backprogeng/mocks"
-	"github.com/golang/mock/gomock"
+	mocks "github.com/SapolovichSV/backprogeng/mocks/drink"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
+	"go.uber.org/mock/gomock"
 )
 
 func Test_httpHandler_createDrink(t *testing.T) {

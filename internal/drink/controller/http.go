@@ -76,6 +76,7 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 //		@Param drink body entities.Drink true "Drink what we add with optional tags,if tags not: set tags will be empty, name is required,"
 //		@Router /drink [post]
 func (h *httpHandler) createDrink(c echo.Context) error {
+
 	var drink entities.Drink
 	if err := c.Bind(&drink); err != nil {
 		return c.JSON(400, err.Error())

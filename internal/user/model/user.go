@@ -12,10 +12,12 @@ import (
 type SQLUserModel struct {
 	db *pgxpool.Pool
 }
+
+//go:generate mockgen -destination=../mocks/user/mock_user.go -package=mocks github.com/SapolovichSV/backprogeng/internal/user/model userModel
 type userModel interface {
 	CreateUser(ctx context.Context, user entities.User) (entities.User, error)
-	UserById(ctx context.Context, id int) (entities.User, error)
-	AddFav(ctx context.Context, drinkName string, user entities.User)
+	UserByID(ctx context.Context, id int) (entities.User, error)
+	AddFav(ctx context.Context, drinkName string, useriD int) (entities.User, error)
 }
 
 func New(db *pgxpool.Pool) *SQLUserModel {

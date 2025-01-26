@@ -4,6 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"log/slog"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
 	"github.com/SapolovichSV/backprogeng/internal/authmiddleware"
 	"github.com/SapolovichSV/backprogeng/internal/config"
@@ -20,6 +24,8 @@ import (
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
+const SERVER_SHUTDOWN_TIMEOUT = 10 * time.Second
+
 // @title backProgeng API Info
 // @version 1.0
 // @description This is a simple backend for a out web application
@@ -28,17 +34,22 @@ func main() {
 	Run()
 }
 func Run() {
-	logger := logger.New(0)
-	//Чекаем переменные окружения чтобы подцепить бд и порт сервера
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	config := config.ListConfig()
+	logger := logger.New(slog.Level(config.LogLevel))
 	logger.Info("Config parsed", "config", config)
 	//sudo docker run --rm --name db -p 5432:5432 -e POSTGRES_PASSWORD=pass123 -d postgres
 	migrateAndUp(&config, logger)
 
-	ctx := context.Background()
 	conn, err := pgxpool.New(ctx, config.DbAddr)
-	if err := conn.Ping(ctx); err != nil {
+	if err != nil {
 		panic("Connection fail" + err.Error())
+	}
+	defer conn.Close()
+	if err := conn.Ping(ctx); err != nil {
+		panic("Con't ping db" + err.Error())
 	}
 	//Создаём модель дринков
 	modelDrink := drinkModel.New(conn)
@@ -55,13 +66,21 @@ func Run() {
 
 	drinkHandler.AddRoutes("api", router)
 	userHandler.AddRoutes("api", router)
-	//userHandler.AddRoutes("api", router)
-	//GameHandler.AddRoutes("api",router))
 	//Запускаем сервер
 	err = server.Start()
 	if err != nil {
 		panic(err)
 	}
+	//также создаём горутину для грасефук шатдауна
+	go func() {
+		<-ctx.Done()
+		logger.Info("Shutting down server")
+		ctx, cancel := context.WithTimeout(context.Background(), SERVER_SHUTDOWN_TIMEOUT)
+		defer cancel()
+		if err := server.Stop(ctx); err != nil {
+			logger.Error("Failed to stop server", "error", err)
+		}
+	}()
 }
 func migrateAndUp(config *config.Config, logger *slog.Logger) {
 	db, err := sql.Open("pgx", config.DbAddr)
