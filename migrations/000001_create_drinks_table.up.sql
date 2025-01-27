@@ -39,4 +39,4 @@ VALUES ("Bad Touch","Sour,Classy,Vintage"),
     ("Sugar Rush", "Sweet,Girly,Happy"),
     ("Sunshine Cloud", "Bitter,Girly,Soft"),
     ("Suplex", "Bitter,Manly,Burning"),
-    ("Zen Star", "Sour,Promo,Bland")
+    ("Zen Star", "Sour,Promo,Bland");
