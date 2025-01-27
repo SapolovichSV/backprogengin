@@ -2,6 +2,7 @@ package queries
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SapolovichSV/backprogeng/internal/errlib"
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
@@ -55,10 +56,12 @@ WHERE users.id = $2;`
 		res.FavouritesDrinkName = append(res.FavouritesDrinkName, drinkName)
 	}
 	if row.Err() != nil {
+		fmt.Println(row.Err())
 		return entities.User{}, errlib.WrapError(row.Err(), "users", "user")
-	} else if len(res.Username) == 0 {
-		return entities.User{}, errlib.NotFoundErr{Where: "users", What: "user"}
 	}
+	// } else if len(res.Username) == 0 {
+	// 	return entities.User{}, errlib.NotFoundErr{Where: "users", What: "user"}
+	// }
 	return res, nil
 }
 func (q *Query) AddToUserNewFavoriteDrink(userID int, drinkID int) error {
@@ -76,6 +79,9 @@ func (q *Query) DrinkIDByName(drinkname string) (int, error) {
 	`
 	var drinkID int
 	if err := q.db.QueryRow(q.ctx, queryGetDrinkID, drinkname).Scan(&drinkID); err != nil {
+		fmt.Println(drinkname)
+		fmt.Println(len(drinkname))
+		fmt.Println(err)
 		return 0, errlib.WrapError(err, "drinks", drinkname)
 	}
 	return drinkID, nil

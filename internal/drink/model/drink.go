@@ -41,6 +41,7 @@ func New(db *pgxpool.Pool) *SQLDrinkModel {
 func (m *SQLDrinkModel) CreateDrink(ctx context.Context, dCont entities.Drink) (entities.Drink, error) {
 	q := queries.New(ctx, m.db)
 	if _, err := q.CreateDrink(dCont.Name); err != nil {
+		fmt.Println(dCont)
 		return entities.Drink{}, err
 	}
 
@@ -103,11 +104,8 @@ func (m *SQLDrinkModel) DrinksByTags(ctx context.Context, tagsCont []string) ([]
 	return drinks, wrapifErrorInModel("drink by tags", err)
 }
 func (m *SQLDrinkModel) AllDrinks(ctx context.Context, id int) ([]entities.Drink, error) {
-	sql, args, err := sq.Select("name", "tags").From("drinks").Where(squirrel.Gt{"id": id}).ToSql()
-	if err != nil {
-		return nil, wrapifErrorInModel("all drinks", err)
-	}
-	rows, err := m.db.Query(ctx, sql, args...)
+	sql := "SELECT name,tags FROM drinks WHERE id >= $1;"
+	rows, err := m.db.Query(ctx, sql, id)
 	if err != nil {
 		return nil, wrapifErrorInModel("all drinks", err)
 	}

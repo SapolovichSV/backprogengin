@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
@@ -39,6 +40,7 @@ func (h *httpHandler) AddRoutes(pathRoutesName string, router *echo.Router) {
 	router.Add("POST", "/"+pathRoutesName+"/user", h.CreateUser)
 	router.Add("GET", "/"+pathRoutesName+"/user/:id", h.UserByID)
 	router.Add("PATCH", "/"+pathRoutesName+"/user/fav", h.AddFav)
+	router.Add("GET", "/"+pathRoutesName+"/user/login", h.Login)
 }
 
 // CreateUser godoc
@@ -63,6 +65,7 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 	}
 
 	user, err := h.st.CreateUser(h.ctx, user)
+	fmt.Println(user)
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
@@ -83,6 +86,7 @@ func (h *httpHandler) CreateUser(c echo.Context) error {
 // @Success 200 {object} entities.User
 // @Failure 401 {object} string
 // @Failure 500 {object} string
+// @Router /user/login [get]
 func (h *httpHandler) Login(c echo.Context) error {
 	user, err := h.auth.Login(c)
 	if err != nil {
@@ -131,7 +135,12 @@ func (h *httpHandler) UserByID(c echo.Context) error {
 func (h *httpHandler) AddFav(c echo.Context) error {
 
 	drinkName := c.Param("drinkname")
+	fmt.Println(drinkName)
+	if len(drinkName) == 0 {
+		drinkName = c.QueryParam("drinkname")
+	}
 	userInfo, err := h.auth.Auth(c)
+	fmt.Println(userInfo)
 	if err != nil {
 		return c.JSON(http.StatusUnauthorized, err)
 	}

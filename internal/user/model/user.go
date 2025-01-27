@@ -2,6 +2,7 @@ package model
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/SapolovichSV/backprogeng/internal/user/entities"
 	"github.com/SapolovichSV/backprogeng/internal/user/model/queries"
@@ -62,13 +63,16 @@ func (m *SQLUserModel) AddFav(ctx context.Context, drinkName string, userID int)
 	query := queries.New(m.db, ctx)
 	drinkID, err := query.DrinkIDByName(drinkName)
 	if err != nil {
+		fmt.Println(err.Error() + "storage add fav drink ID by name")
 		return entities.User{}, err
 	} // err == nil
 	res, err = query.UserWithHisFavsByUserID(userID)
 	if err != nil {
+		fmt.Println(err.Error() + "storage add fav userwithfavs")
 		return entities.User{}, err
 	}
 	if err := query.AddToUserNewFavoriteDrink(userID, drinkID); err != nil {
+		fmt.Println(err.Error() + "storage add fav add to user ")
 		return entities.User{}, err
 	}
 	res.FavouritesDrinkName = append(res.FavouritesDrinkName, drinkName)

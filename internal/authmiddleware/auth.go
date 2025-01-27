@@ -2,6 +2,7 @@ package authmiddleware
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -35,7 +36,7 @@ func parseSecretKey() secretKey {
 }
 
 type jwtCustomClaims struct {
-	id       int
+	Id       int    `json:"id"`
 	Username string `json:"username"`
 	Password string `json:"password"`
 	jwt.RegisteredClaims
@@ -81,10 +82,11 @@ func (a *authMiddle) Auth(c echo.Context) (entities.User, error) {
 		return entities.User{}, errlib.WrapErr(err, "failing to get claims from token")
 	}
 	user := entities.User{
-		ID:       claims.id,
+		ID:       claims.Id,
 		Username: claims.Username,
 		Password: claims.Password,
 	}
+	fmt.Println(user)
 	return user, nil
 }
 func (a *authMiddle) Login(c echo.Context) (entities.User, error) {
@@ -108,7 +110,7 @@ func (a *authMiddle) Login(c echo.Context) (entities.User, error) {
 	}
 	c.SetCookie(cookie)
 	user := entities.User{
-		ID:       claims.id,
+		ID:       claims.Id,
 		Username: claims.Username,
 		Password: claims.Password,
 	}

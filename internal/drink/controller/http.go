@@ -174,10 +174,12 @@ func (h *httpHandler) allDrinks(c echo.Context) error {
 	param := c.Param("id")
 	id, err := strconv.Atoi(param)
 	if err != nil {
+		fmt.Println(err)
 		return c.JSON(500, err.Error())
 	}
 	d, err := h.st.AllDrinks(h.ctx, id)
 	if err != nil {
+		fmt.Println(err.Error() + "at storage")
 		return c.JSON(500, err.Error())
 	}
 	return c.JSON(200, d)

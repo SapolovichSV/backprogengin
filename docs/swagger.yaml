@@ -227,6 +227,14 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/entities.User'
+        "400":
+          description: Bad Request
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
       summary: Create a user
       tags:
       - user
@@ -280,6 +288,32 @@ paths:
           schema:
             type: string
       summary: Add a favourite drink to user
+      tags:
+      - user
+  /user/login:
+    get:
+      consumes:
+      - application/json
+      description: |-
+        Login user,if user non-existent: error
+        otherwise return user info
+        assigment to user cookie(encoded jwt token) wih user info
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.User'
+        "401":
+          description: Unauthorized
+          schema:
+            type: string
+        "500":
+          description: Internal Server Error
+          schema:
+            type: string
+      summary: Login
       tags:
       - user
 swagger: "2.0"
